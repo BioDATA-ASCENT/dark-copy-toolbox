@@ -80,6 +80,19 @@ No Claude Code? `bash scripts/run_all.sh` runs every phase in order (idempotent,
    DRAGEN 4.4.7 multigenome, Locityper LOO).
 4. **Figure 3**: Bayesian caller (depth + PSV allele fraction + population prior), calibration and reliability plot.
 
+## 5. The tool: Dark Dosage Explorer + Bayes caller
+
+- **`reports/explorer/index.html`** — one self-contained page (open it in any browser, no server). Locus browser for
+  SMN1/SMN2, the α-globin cluster and the chr21 false duplication on GRCh38 and CHM13 (MAPQ ≥ 0 vs ≥ 20, population
+  band, paralog-specific sites); per-sample card (assembly truth, DRAGEN 4.0.3/4.2.7/4.4.7, posterior grid); a
+  **caller lab** where the Bayesian caller re-runs in the browser as you move its parameters and is re-scored against
+  truth; and a scoreboard of every method.
+  Rebuild after any table changes: `python scripts/14_export_explorer.py` (page source: `explorer/template.html`).
+- **`caller/bayes_cn.py`** — the same caller on the command line:
+  `python caller/bayes_cn.py --ref grch38 --eval` (also `--ref chm13`, `--no-prior`, `--eff-sites`, `--conc`, `--eps`).
+- **`scripts/13_concordance.py`** — every method vs truth on the same targets → `data/tables/concordance.tsv`.
+- **`snakemake -j 4`** reruns everything from P3 on (all steps idempotent).
+
 ## Data sources
 
 1000 Genomes 30x (NYGC, GRCh38) · AnVIL_T2T_CHRY (CHM13v2.0 alignments, AnVIL/AWS mirror) · HPRC release 2
