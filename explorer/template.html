@@ -191,6 +191,7 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
     <div class="person">
       <label class="ctl" for="sampleSel">Person <select id="sampleSel"></select></label>
       <label class="ctl" for="sampleSearch"><input type="search" id="sampleSearch" placeholder="find ID or population…" size="16"></label>
+      <span class="note" title="Truth from the person's HPRC assembly">SMN = SMN1+SMN2 copies · α = HBA1+HBA2 genes (4 is typical)</span>
     </div>
   </nav>
 
@@ -424,7 +425,8 @@ function fillSamples(filter = "") {
   for (const s of browsable) {
     if (f && !s.id.includes(f) && !(s.pop || "").includes(f)) continue;
     const t = s.truth;
-    const tag = t && t.usable_SMN === "True" ? ` · SMN ${t.SMN1}+${+t.SMN2 + +t["SMN_del7-8"]}` : "";
+    const tag = (t && t.usable_SMN === "True" ? ` · SMN ${t.SMN1}+${+t.SMN2 + +t["SMN_del7-8"]}` : "") +
+      (t && t.usable_HBA === "True" ? ` · α ${t.HBA_total}` : "");
     const o = new Option(`${s.id} (${s.pop}${tag})`, s.id); if (s.id === state.sample) o.selected = true; sel.appendChild(o);
   }
   if (sel.options.length && !sel.value) { state.sample = sel.options[0].value; }
