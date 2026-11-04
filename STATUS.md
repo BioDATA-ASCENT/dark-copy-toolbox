@@ -23,3 +23,4 @@
 | 2026-11-04 04:16 | P9_tables | DONE | 293 sample×ref depth tables; median control depth 35.819x |
 | 2026-11-04 04:17 | P7_precomputed | DONE | Locityper, ctyper tables, DRAGEN per-sample outputs |
 | 2026-11-04 04:19 | S1_dragen_table | DONE | 1950 sample×version rows -> data/tables/dragen_calls.tsv |
+| 2026-11-04 04:20 | S2_locityper | DONE | loci ['CBS', 'HBM', 'MARVELD2']; LOO rows 360; 1kGP gts 1950; CN typed 0 (no SMN/HBA locus in db) |
