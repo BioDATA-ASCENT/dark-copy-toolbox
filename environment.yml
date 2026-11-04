@@ -1,0 +1,43 @@
+name: darkdosage
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.12
+  # read/alignment handling (no mapping of reads, only slicing + small gene-to-haplotype alignments)
+  - samtools>=1.20
+  - htslib>=1.20
+  - bcftools>=1.20
+  - bedtools
+  - mosdepth
+  - minimap2
+  - crossmap              # lift BED windows GRCh38 -> CHM13 with the T2T chain
+  - seqkit
+  # copy-number / paralog callers
+  - smncopynumbercaller   # Illumina SMN1/SMN2 caller (GRCh37/38 only)
+  - parascopy             # paralog-specific CN for low-copy repeats (optional arm)
+  - locityper             # pangenome-haplotype targeted genotyper
+  - ctyper                # pangenome k-mer CN genotyper (linux-64 only)
+  # workflow + transfer
+  - snakemake>=8
+  - awscli
+  - aria2
+  - wget
+  - curl
+  - pigz
+  - jq
+  - parallel
+  # python analysis stack
+  - numpy
+  - scipy
+  - pandas
+  - pysam
+  - pyfaidx
+  - statsmodels
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - pyyaml
+  - tqdm
+  - jupyterlab
+  - ipykernel

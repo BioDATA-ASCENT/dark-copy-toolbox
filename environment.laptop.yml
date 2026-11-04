@@ -1,0 +1,24 @@
+# Lightweight analysis env for teammates' laptops (macOS Apple Silicon / Intel, Linux).
+# Enough to work on the sliced data, tables and the Bayesian caller tomorrow. The overnight
+# download/slicing machine uses environment.yml (Linux) instead.
+name: darkdosage-lite
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.12
+  - samtools>=1.20
+  - bcftools>=1.20
+  - minimap2
+  - pysam
+  - numpy
+  - scipy
+  - pandas
+  - statsmodels
+  - scikit-learn
+  - matplotlib
+  - seaborn
+  - pyyaml
+  - snakemake>=8
+  - jupyterlab
+  - ipykernel

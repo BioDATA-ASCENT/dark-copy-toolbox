@@ -1,0 +1,114 @@
+# Dark dosage — overnight configuration.
+# All paths are relative to the repo root. Scripts read this file via scripts/cfg.py.
+
+data_dir: data
+logs_dir: logs
+threads: 8
+slice_jobs: 6               # samples sliced in parallel (I/O bound, not CPU bound)
+slice_format: cram          # cram (small, needs the reference) | bam (bigger, no reference needed)
+min_free_gb: 60             # preflight refuses to start bulk downloads below this
+deadline_local: "07:30"     # America/New_York. Core phases + MORNING_REPORT.md must exist by then.
+
+# Local reference FASTAs used to decode CRAM slices (relative to data_dir). If 06_slice_crams.sh --check-ref
+# reports an MD5 mismatch for CHM13, download the matching analysis-set FASTA and point chm13 at it here.
+ref_fasta:
+  grch38: refs/GRCh38_full_analysis_set_plus_decoy_hla.fa
+  chm13: refs/chm13v2.0.fa
+
+samples:
+  max_samples: 150         # hard cap on samples sliced (per reference)
+  include_trio_parents: true
+  n_extra_random: 0         # extra non-HPRC 1kGP samples for a population prior (0 = none)
+  seed: 42
+
+# Loci. Genes are looked up by symbol in GENCODE (GRCh38) and the CHM13 RefSeq/Liftoff GFF3.
+# The locus window = span of all genes found ± pad_bp. Bins tile the window for depth profiles.
+loci:
+  SMN:
+    chrom: chr5
+    genes: [SMN1, SMN2, NAIP, SERF1A, SERF1B, GTF2H2, GTF2H2C]
+    anchors: [RAD17, MARVELD2, BDP1, MCCC2]   # unique flanking genes, used to judge assembly completeness
+    pad_bp: 300000
+    bin_bp: 1000
+  HBA:
+    chrom: chr16
+    genes: [HBZ, HBM, HBA2, HBA1, HBQ1]
+    anchors: [NPRL3, LUC7L]
+    pad_bp: 20000
+    bin_bp: 250
+  CHR21_FALSEDUP:           # bonus demo: GRCh38 false duplication on chr21 that CHM13 fixes
+    chrom: chr21
+    genes: [CBS, U2AF1, CRYAA, KCNE1]
+    grch38_only_genes: [CBSL, U2AF1L5, CRYAA2, KCNE1B]
+    anchors: []
+    pad_bp: 20000
+    bin_bp: 1000
+    optional: true
+
+# Normalisation controls: contiguous unique blocks (contiguous = cheap to stream from remote CRAMs;
+# thousands of tiny windows would each pull a whole CRAM container).
+controls:
+  n_blocks: 30
+  block_bp: 100000
+  subwindow_bp: 2000
+  exclude_chroms: [chr5, chr16, chr21, chrX, chrY]
+
+urls:
+  # --- verified on 2026-11-03 ---
+  kgp_pedigree: http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/1kGP.3202_samples.pedigree_info.txt
+  kgp_s3_prefix: s3://1000genomes/1000G_2504_high_coverage/
+  chm13_fasta_gz: https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/GCA_009914755.4/chm13v2.0.fa.gz
+  chm13_annotation_s3_prefix: s3://human-pangenomics/T2T/CHM13/assemblies/annotation/
+  chm13_analysis_set_s3_prefix: s3://human-pangenomics/T2T/CHM13/assemblies/analysis_set/
+  chain_grch38_to_chm13: https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/chain/v1_nflo/grch38-chm13v2.chain
+  hprc_r2_assemblies: https://raw.githubusercontent.com/human-pangenomics/hprc_intermediate_assembly/main/data_tables/assemblies_release2_v1.0.index.csv
+  hprc_r2_cat_annotation: https://raw.githubusercontent.com/human-pangenomics/hprc_intermediate_assembly/main/data_tables/annotation/cat/cat_genes_hprc_r2_v1.3.index.csv
+  hprc_r2_illumina: https://raw.githubusercontent.com/human-pangenomics/hprc_intermediate_assembly/main/data_tables/sequencing_data/data_illumina_release2_v1.0.index.csv
+  smncaller_region_38: https://raw.githubusercontent.com/Illumina/SMNCopyNumberCaller/master/data/SMN_region_38.bed
+  smncaller_snp_38: https://raw.githubusercontent.com/Illumina/SMNCopyNumberCaller/master/data/SMN_SNP_38.txt
+  azul_service: https://service.explore.anvilproject.org
+  # --- standard locations, not checked from the planning sandbox: preflight verifies them ---
+  kgp_seq_index_2504: http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/1000G_2504_high_coverage.sequence.index
+  kgp_seq_index_698: http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/additional_698_related/1000G_698_related_high_coverage.sequence.index
+  kgp_population_ped: http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/20130606_g1k_3202_samples_ped_population.txt
+  grch38_fasta: http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/GRCh38_reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa
+  grch38_fasta_s3: s3://1000genomes/technical/reference/GRCh38_reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa
+  gencode_gtf: https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_49/gencode.v49.basic.annotation.gtf.gz
+  grch38_superdups: https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/genomicSuperDups.txt.gz
+
+# CHM13v2.0 1kGP alignments live in AnVIL workspace AnVIL_T2T_CHRY, mirrored on AWS with hashed
+# object names. 04_resolve_chm13_crams.py finds them through the AnVIL Azul API.
+anvil:
+  dataset_title_candidates: [ANVIL_T2T_CHRY, AnVIL_T2T_CHRY]
+  fallback_dataset_title_candidates: [ANVIL_T2T, AnVIL_T2T]   # CHM13 v1.x alignments, only if CHRY fails
+
+# Precomputed pangenome-based results (md5 values verified on Zenodo 2026-11-03).
+zenodo:
+  locityper:     # record 15879519 (v4, 2025-07-14)
+    base: https://zenodo.org/records/15879519/files
+    files:
+      README.md: 12027cd715e3423cdf0b08b0ab164fc9
+      1kgp_genotypes.csv.gz: ba9775adabbabecec9313c19e43e88c0
+      locityper-benchmarking.tar.gz: 10e629a4793e3ef6fe7bb6796417a77b
+      bg-1kgp.tar.gz: dd988b8f8c4a960844712fc0b1e66b65
+      db.tar.gz: f782f6e72426b7a818c7e1fd42f50277
+  ctyper:        # record 16340156 (gene matrices v1.1, 2025-07-21)
+    base: https://zenodo.org/records/16340156/files
+    files:
+      PangenomeAlleles_typefix.v1.0.tsv: b84bd81cb5870396393809dd0c02f4f0
+      PangenomeAlleles_annotationfix.tsv.gz: 103261ff984159ea0941b1645a581ab8
+      Allalters.fa.xz: d5c356233377ea27ab55bdd6b426f210
+    optional_files:   # only needed to actually run ctyper (set fetch_ctyper_matrix: true)
+      HprcCpcHgsvc_cmr_matrix.txt.gz: b031b2103ad98312a6b173de9b4015e6
+      HprcCpcHgsvc_cmr_matrix.txt.bgd: 4cb9d8c44b5a410fbfbcaa1f86fd6605
+      HprcCpcHgsvc_cmr_matrix.txt.index: 623048c3617a9ae7d42b0b0e739f0dfc
+fetch_ctyper_matrix: false
+
+# Illumina DRAGEN reanalyses of all 3,202 1kGP samples (public, us-east-1/us-west-2).
+# v4.2.7 uses a graph-augmented hg38; v4.4.7 uses DRAGEN's multigenome (pangenome) reference.
+dragen_buckets:
+  v4_0_3: s3://1000genomes-dragen-v4.0.3/
+  v4_2_7: s3://1000genomes-dragen-v4-2-7/
+  v4_4_7: s3://1000genomes-dragen-v4-4-7/
+dragen_file_patterns: [smn, hba, targeted, cyp2d6, gba, coverage_metrics, mapping_metrics]
+dragen_max_file_mb: 200
