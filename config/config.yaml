@@ -38,8 +38,9 @@ loci:
     bin_bp: 250
   CHR21_FALSEDUP:           # bonus demo: GRCh38 false duplication on chr21 that CHM13 fixes
     chrom: chr21
-    genes: [CBS, U2AF1, CRYAA, KCNE1]
-    grch38_only_genes: [CBSL, U2AF1L5, CRYAA2, KCNE1B]
+    genes: [CBS, U2AF1, CRYAA]        # KCNE1 dropped: its false copy (KCNE1B, chr21:7.8 Mb) is a separate block
+    grch38_only_genes: [CBSL, U2AF1L5, CRYAA2]
+    paralog_of: {CBSL: CBS, U2AF1L5: U2AF1, CRYAA2: CRYAA}   # GENCODE v49 has no names for these: found by sequence
     anchors: []
     pad_bp: 20000
     bin_bp: 1000

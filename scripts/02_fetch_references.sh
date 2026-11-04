@@ -7,7 +7,7 @@ rc=0
 
 # GRCh38 exactly as used by the NYGC 1kGP CRAMs (needed to decode CRAM slices).
 fetch_first "$R/GRCh38_full_analysis_set_plus_decoy_hla.fa" \
-  "$(cfg urls.grch38_fasta)" "$(cfg urls.grch38_fasta_s3)" || rc=1
+  "$(cfg urls.grch38_fasta_s3)" "$(cfg urls.grch38_fasta)" || rc=1
 [[ -s "$R/GRCh38_full_analysis_set_plus_decoy_hla.fa.fai" ]] || samtools faidx "$R/GRCh38_full_analysis_set_plus_decoy_hla.fa"
 
 # CHM13v2.0. chr1-22/X are identical across the analysis-set variants, so this FASTA decodes

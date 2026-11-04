@@ -49,6 +49,63 @@ def parse_genes(fn, wanted, fmt):
     return hits
 
 
+def rescue_missing_genes(genes, loci):
+    """Fill gaps in the annotations by sequence/chain so every reference gets the same gene set.
+
+    - grch38_only_genes (GRCh38 false-duplication copies) that GENCODE no longer names: align the parent
+      gene (config `paralog_of`) to its chromosome with minimap2 and take the best non-self hit.
+    - genes missing from the CHM13 GFF3 (e.g. CBS is absent from the RefSeq Liftoff v5.2 file):
+      lift the GRCh38 record with the GRCh38->CHM13 chain (CrossMap), keep a lift covering >= 90%.
+    """
+    G38 = genes["grch38"]
+    for lname, L in loci.items():
+        for child, parent in (L.get("paralog_of") or {}).items():
+            if G38.get(child) or not G38.get(parent):
+                continue
+            c, s, e, strand = G38[parent][0]
+            chrom_fa = os.path.join(OUT, f"_{c}.grch38.fa")
+            if not os.path.exists(chrom_fa):
+                with open(chrom_fa, "w") as fh:
+                    fh.write(run(["samtools", "faidx", REF_FA["grch38"], c]))
+            q = read_fasta_region(REF_FA["grch38"], f"{c}:{s + 1}-{e}")[1]
+            paf = run(["minimap2", "-x", "asm20", "-N", "10", "-p", "0.3", chrom_fa, "/dev/stdin"], input=f">q\n{q}\n")
+            best = None
+            for line in paf.splitlines():
+                f = line.split("\t")
+                ts, te, nm, al = int(f[7]), int(f[8]), int(f[9]), int(f[10])
+                if ts < e and s < te:  # the gene itself
+                    continue
+                if al >= 0.8 * len(q) and (best is None or nm > best[2]):
+                    best = (ts, te, nm, f[4])
+            if best:
+                G38[child] = [(c, best[0], best[1], strand if best[3] == "+" else ("-" if strand == "+" else "+"))]
+                log(f"grch38: {child} not in GENCODE; located by aligning {parent}: {c}:{best[0] + 1}-{best[1]}")
+            else:
+                log(f"grch38: {child} not found by sequence either")
+    if "chm13" not in genes:
+        return
+    G13 = genes["chm13"]
+    for lname, L in loci.items():
+        for sym in L["genes"] + L.get("anchors", []):
+            if any(r[0] == L["chrom"] for r in G13.get(sym, [])) or not G38.get(sym):
+                continue
+            c, s, e, strand = next((r for r in G38[sym] if r[0] == L["chrom"]), G38[sym][0])
+            tmp = tempfile.mkdtemp(dir=OUT)
+            src, dst = os.path.join(tmp, "g.bed"), os.path.join(tmp, "g.chm13.bed")
+            write_bed(src, [(c, s, e, sym, 0, strand)])
+            subprocess.run(["CrossMap", "bed", os.path.join(R, "grch38-chm13v2.chain"), src, dst],
+                           check=True, capture_output=True)
+            parts = [l.split("\t") for l in open(dst)] if os.path.exists(dst) else []
+            parts = [p for p in parts if p[0] == L["chrom"]]
+            if parts:
+                lo, hi = min(int(p[1]) for p in parts), max(int(p[2]) for p in parts)
+                if sum(int(p[2]) - int(p[1]) for p in parts) >= 0.9 * (e - s) and hi - lo <= 1.5 * (e - s):
+                    G13[sym] = [(L["chrom"], lo, hi, parts[0][5].strip())]
+                    log(f"chm13: {sym} not in GFF3; lifted from GRCh38 by chain: {L['chrom']}:{lo + 1}-{hi}")
+                    continue
+            log(f"chm13: {sym} not in GFF3 and chain lift failed")
+
+
 def write_bed(fn, rows):
     with open(fn, "w") as fh:
         for r in rows:
@@ -98,6 +155,7 @@ def main():
         if os.path.exists(os.path.join(R, cand)):
             ann["chm13"] = (os.path.join(R, cand), "gff")
     genes = {ref: parse_genes(fn, gene_sets[ref], fmt) for ref, (fn, fmt) in ann.items()}
+    rescue_missing_genes(genes, loci)
 
     # ---- genes / loci / bins
     for ref, G in genes.items():
@@ -117,11 +175,18 @@ def main():
                 for k, (c, s, e, strand) in enumerate(copies):
                     gene_rows.append((c, s, e, sym if k == 0 else f"{sym}#{k}", lname, strand))
             c = L["chrom"]
-            lo = max(0, min(r[1] for _, r in recs) - L["pad_bp"])
-            hi = max(r[2] for _, r in recs) + L["pad_bp"]
-            loci_rows.append((c, lo, hi, lname))
-            for i, s in enumerate(range(lo, hi, L["bin_bp"])):
-                bin_rows.append((c, s, min(hi, s + L["bin_bp"]), f"{lname}:bin{i:05d}", lname))
+            # one window per cluster of genes (genes > 2 Mb apart, e.g. the chr21 false duplication, get
+            # separate windows instead of one huge span)
+            spans = merge([(c, max(0, r[1] - L["pad_bp"]), r[2] + L["pad_bp"]) for _, r in recs])
+            spans = merge([(c, s - 1_000_000, e + 1_000_000) for c, s, e in spans])
+            spans = [(c, s + 1_000_000, e - 1_000_000) for c, s, e in spans]
+            i = 0
+            for _, lo, hi in spans:
+                lo = max(0, lo)
+                loci_rows.append((c, lo, hi, lname))
+                for s in range(lo, hi, L["bin_bp"]):
+                    bin_rows.append((c, s, min(hi, s + L["bin_bp"]), f"{lname}:bin{i:05d}", lname))
+                    i += 1
             # anchors kept separately for assembly-completeness checks downstream
             for a in L.get("anchors", []):
                 for k, (ac, s, e, strand) in enumerate(G.get(a, [])):
