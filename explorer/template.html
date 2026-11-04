@@ -2,6 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script>try { const t = localStorage.getItem("dct-theme"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
 /* Layout: a lab notebook for one question — stacked full-width instrument panels (locus browser, sample card,
    caller lab, scoreboard), each a quiet surface on a cool paper ground; data ink carries the colour. */
@@ -141,6 +142,16 @@ h4 { margin: 0 0 4px; font: 650 12px var(--f-body); text-transform: uppercase; l
 .howtruth summary { cursor: pointer; color: var(--ink); font-size: 15px; }
 .howtruth ol { margin: 10px 0; padding-left: 20px; display: grid; gap: 6px; max-width: 100ch; }
 .howtruth b { color: var(--ink); }
+button.chip { font: 500 12.5px var(--f-mono); border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 5px; padding: 2px 7px; cursor: pointer; }
+button.chip:hover { background: var(--accent); color: var(--surface); }
+td.wrapcell { white-space: normal; min-width: 260px; color: var(--ink-2); }
+#dragenInfo p, #dragenInfo ol { max-width: 100ch; margin: 10px 0; }
+#dragenInfo table { margin-block: 4px; }
+.themebtn { font: 500 13px var(--f-body); background: var(--surface); color: var(--ink-2); border: 1px solid var(--rule); border-radius: 5px; padding: 5px 10px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.themebtn:hover { border-color: var(--accent); color: var(--ink); }
+.themebtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.themebtn svg { width: 14px; height: 14px; }
+a.opendet { color: var(--accent); }
 .toplinks { font-size: 14px; } .toplinks a { color: var(--accent); }
 .mqctl input[type=range] { width: 200px; }
 .zoombar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
@@ -191,6 +202,7 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
       <label class="ctl" for="sampleSel">Person <select id="sampleSel"></select></label>
       <label class="ctl" for="sampleSearch"><input type="search" id="sampleSearch" placeholder="find ID or population…" size="16"></label>
       <span class="note" title="Truth from the person's HPRC assembly">SMN = SMN1+SMN2 copies · α = HBA1+HBA2 genes (4 is typical)</span>
+      <button type="button" class="themebtn" id="themeBtn" aria-label="Switch between light and dark mode"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg><span id="themeLab">Dark</span></button>
     </div>
   </nav>
 
@@ -275,7 +287,7 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
   <section class="step" id="step4" aria-labelledby="h-sample">
     <div class="step-head"><span class="badge">Step 4</span><h2 id="h-sample">One person, every answer · <span id="cardName" class="mono"></span></h2></div>
     <div class="explain">
-      <div><h4>What you're looking at</h4><p>For the selected person: the copy numbers in their own assembly (truth) next to the answers of the paralog-aware callers (DRAGEN ×3, ctyper on GRCh38- and CHM13-aligned reads).</p></div>
+      <div><h4>What you're looking at</h4><p>For the selected person: the copy numbers in their own assembly (truth) next to the answers of the paralog-aware callers (DRAGEN ×3, ctyper on GRCh38- and CHM13-aligned reads). <a href="#dragenInfo" class="opendet">How DRAGEN works →</a></p></div>
       <div><h4>How to read it</h4><ul>
         <li>Numbers are whole-genome counts (both chromosomes): SMN1 = 2 is typical, 1 = SMA carrier.</li>
         <li>Use the shortcuts to jump to people where methods tend to disagree.</li></ul></div>
@@ -307,6 +319,38 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
       <details><summary>Table view</summary><div class="scroll" id="scoreTable"></div></details>
       <div class="notrun"><b>Not run: Locityper.</b> Excluded by design. It aligns reads to candidate haplotypes, and this project does no read mapping. Its public database also has no SMN or HBA locus, and SMN would need a 1–3 Mb locus (see step 3).</div>
     </div>
+    <details class="howtruth" id="dragenInfo"><summary><b>How DRAGEN works, and the three ways it was run</b></summary>
+      <p><b>We did not run DRAGEN.</b> DRAGEN is Illumina's commercial pipeline. Illumina re-processed all 3,202 1000 Genomes 30x genomes with it three times and published the outputs in public S3 buckets. We only downloaded each person's SMN and α-globin result files.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Release</th><th>Reference the reads were aligned to</th><th>SMN caller</th><th>α-globin caller</th><th>Files we read</th></tr></thead>
+        <tbody>
+          <tr><td><b>4.0.3</b></td><td class="mono">hg38-alt-masked-v2-graph</td><td>yes</td><td>not yet in this release</td><td class="mono">.smn.tsv</td></tr>
+          <tr><td><b>4.2.7</b></td><td class="mono">hg38_alt_masked_graph_v3</td><td>yes</td><td>yes (new “targeted caller”)</td><td class="mono">.smn.tsv, .targeted.json</td></tr>
+          <tr><td><b>4.4.7</b></td><td class="mono">hg38-alt_masked…-r5.0-2</td><td>yes</td><td>yes</td><td class="mono">.targeted.json</td></tr>
+        </tbody></table></div>
+      <p class="note">All three use GRCh38 with its alternative contigs masked, extended with a graph of known population variation so reads in variable regions map better. 4.4.7 uses a newer generation of the graph (r5.0, Illumina's “multigenome” reference, built from population genome assemblies). There is no DRAGEN run on CHM13.</p>
+      <p><b>The SMN caller, step by step</b> (DRAGEN's built-in version of SMNCopyNumberCaller, Chen et al. 2020):</p>
+      <ol>
+        <li><b>Pool the twins.</b> Reads on SMN1 and on SMN2 are counted together, whatever their MAPQ. Where a read ended up between the twins no longer matters, which is exactly the trap that breaks naive depth in step 2.</li>
+        <li><b>Total copies from depth.</b> Pooled depth ÷ depth in normal two-copy regions × 2 gives a raw total (for example 4.01), rounded to the nearest whole number by a statistical model. A second depth over exons 7–8 only gives the full-length copies; the difference is the SMN2Δ7–8 copies, which lack exons 7–8.</li>
+        <li><b>Split the total with the twin letters.</b> At each site where SMN1 and SMN2 differ, the share of reads carrying the SMN1 letter × total gives an SMN1 estimate per site (the eight “raw sites” values). They are combined into one whole-number SMN1 call; SMN2 = full-length total − SMN1.</li>
+        <li><b>Flags.</b> SMN1 = 0 → <span class="mono">isSMA</span>; SMN1 = 1 → <span class="mono">isCarrier</span>.</li>
+      </ol>
+      <p><b>The α-globin caller</b> (4.2.7 and later) looks for the common α-thalassaemia deletions and duplications (−α3.7, −α4.2, −−SEA, ααα3.7, ααα4.2 and others) from depth patterns across the locus. It reports a genotype such as <span class="mono">-a3.7/aa</span>, which we convert to a total gene count (here 3).</p>
+      <p><b>Why the three releases give identical answers:</b> the SMN algorithm and the reads are the same. A new reference only changes <i>which twin</i> a read is aligned to, and step 1 pools the twins anyway. Raw values differ only in the second decimal (4.01 vs 4.01; 4.94 vs 4.93). So the three rows on the scoreboard are one method measured three times, not three independent confirmations.</p>
+      <p><b>Every disagreement between DRAGEN and the truth.</b> The scoreboard shows only one SMN1 error (HG02668), but SMN2, total SMN and α-globin each add a few more. It is the same 6 people in all three releases. In 5 of them, ctyper (k-mers, no alignment) and plain depth side with DRAGEN against the assembly, so the assembly is probably what's wrong. Click an ID to open that person.</p>
+      <div class="scroll"><table id="dragenDis">
+        <thead><tr><th>Person</th><th>Target</th><th class="num">Truth</th><th class="num">DRAGEN</th><th class="num">DRAGEN raw</th><th class="num">ctyper</th><th class="num">depth (MAPQ 0)</th><th>Most likely</th></tr></thead>
+        <tbody>
+          <tr><td><button class="chip" data-pick="HG02668">HG02668</button></td><td>SMN1 / total</td><td class="num">2 / 4</td><td class="num">3 / 5</td><td class="num">total 4.94; all 8 sites 2.6–3.3</td><td class="num">3 / 5</td><td class="num">3 / 5–6</td><td class="wrapcell">Assembly collapsed one SMN1 copy. Every read-based method sees 5 copies, 3 of them SMN1.</td></tr>
+          <tr><td><button class="chip" data-pick="HG00597">HG00597</button></td><td>SMN total</td><td class="num">3</td><td class="num">4</td><td class="num">4.01</td><td class="num">4</td><td class="num">4</td><td class="wrapcell">Assembly is missing an SMN2 copy on haplotype 2. Depth is a clean 4.</td></tr>
+          <tr><td><button class="chip" data-pick="HG00658">HG00658</button></td><td>SMN total</td><td class="num">3</td><td class="num">4</td><td class="num">4.00</td><td class="num">4</td><td class="num">4</td><td class="wrapcell">Same pattern: assembly is missing an SMN2 copy on haplotype 1.</td></tr>
+          <tr><td><button class="chip" data-pick="NA18959">NA18959</button></td><td>SMN total</td><td class="num">5</td><td class="num">4</td><td class="num">4.00</td><td class="num">4</td><td class="num">4</td><td class="wrapcell">Assembly has one SMN2 copy too many (false duplication).</td></tr>
+          <tr><td><button class="chip" data-pick="HG00253">HG00253</button></td><td>α-globin total</td><td class="num">6</td><td class="num">4</td><td class="num">n/a</td><td class="num">5</td><td class="num">4–5</td><td class="wrapcell">Assembly contains the ~150 kb α-globin block twice, but the neighbouring HBZ gene sits at a normal 2.03 copies. False duplication.</td></tr>
+          <tr><td><button class="chip" data-pick="NA20905">NA20905</button></td><td>SMN total</td><td class="num">5</td><td class="num">4</td><td class="num">4.49 (full-length 3.91)</td><td class="num">6</td><td class="num">4</td><td class="wrapcell"><b>A real DRAGEN miss.</b> One haplotype carries an SMN2Δ7–8 copy (a partial copy without exons 7–8). It raised total depth by only ~0.5, so DRAGEN rounded it away and reported 0 Δ7–8 copies.</td></tr>
+        </tbody></table></div>
+      <p class="note">So DRAGEN's real accuracy is probably above the 97.6–99.5% shown: most of its “errors” are errors in the truth. This also caps what any benchmark can show. Assembly truth is very good, but tandem identical copies are exactly what assemblers sometimes collapse or duplicate.</p>
+    </details>
     <div class="takeaway"><b>Key message</b> Paralog-aware callers that use twin-specific signals (DRAGEN's targeted callers, ctyper's pangenome k-mers) count SMN1 correctly in 91–99.5% of people. Counting confident reads alone (MAPQ ≥ 20) gets almost nobody right, and counting all reads is no better than guessing.</div>
   </section>
 
@@ -855,4 +899,13 @@ if (state.pg) segButtons("#pgSeg", Object.keys(D.pangraph).map((k) => [k, k === 
 drawPangraph();
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { drawTracks(); drawScore(); drawCard(); drawPangraph(); });
 new MutationObserver(() => { drawTracks(); drawScore(); drawCard(); drawPangraph(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+// ---------------------------------------------------------------- theme toggle (light / dark), remembered per browser
+function isDark() { const t = document.documentElement.dataset.theme; return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; }
+function syncThemeBtn() { $("#themeLab").textContent = isDark() ? "Light mode" : "Dark mode"; }
+$("#themeBtn").onclick = () => { const t = isDark() ? "light" : "dark"; document.documentElement.dataset.theme = t; try { localStorage.setItem("dct-theme", t); } catch (e) {} syncThemeBtn(); };
+syncThemeBtn();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncThemeBtn);
+new MutationObserver(syncThemeBtn).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+document.querySelectorAll("a.opendet").forEach((a) => { a.onclick = () => { const d = document.querySelector(a.getAttribute("href")); if (d) d.open = true; }; });
+document.querySelectorAll("[data-pick]").forEach((b) => { b.onclick = () => { pickSample(b.dataset.pick); document.getElementById("step4").scrollIntoView({ behavior: "smooth" }); }; });
 </script>

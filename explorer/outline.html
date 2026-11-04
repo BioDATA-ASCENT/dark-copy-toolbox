@@ -6,6 +6,7 @@
 <title>Dark Copy Toolbox · Project outline</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<script>try { const t = localStorage.getItem("dct-theme"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
 :root {
   color-scheme: light;
@@ -93,6 +94,11 @@ pre { margin: 0; background: var(--surface); border: 1px solid var(--rule); bord
 .timeline div::before { content: ""; position: absolute; left: -6px; top: 10px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
 .timeline .t { font: 500 12.5px var(--f-mono); color: var(--ink); margin-right: 8px; }
 footer { font-size: 13px; color: var(--muted); }
+.themebtn { font: 500 13px var(--f-body); background: var(--surface); color: var(--ink-2); border: 1px solid var(--rule); border-radius: 5px; padding: 7px 12px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.themebtn:hover { color: var(--ink); }
+.themebtn:focus-visible { outline: 2px solid var(--accent, currentColor); outline-offset: 2px; }
+.themebtn svg { width: 14px; height: 14px; }
+td.wrapcell { min-width: 260px; }
 </style>
 </head>
 <body>
@@ -104,13 +110,14 @@ footer { font-size: 13px; color: var(--muted); }
     <div class="links">
       <a class="btn primary" href="index.html">Open the toolbox →</a>
       <a class="btn" href="https://github.com/jacgonisa/dark-copy-toolbox">Code on GitHub</a>
+      <button type="button" class="themebtn" id="themeBtn" aria-label="Switch between light and dark mode"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg><span id="themeLab">Dark mode</span></button>
     </div>
   </header>
 
   <nav class="toc" aria-label="Contents"><ol>
     <li><a href="#glance">At a glance</a></li><li><a href="#question">1 Question</a></li><li><a href="#rules">2 Ground rules</a></li>
     <li><a href="#data">3 Data</a></li><li><a href="#commands">3b Exact commands</a></li><li><a href="#pipeline">4 Pipeline</a></li><li><a href="#phases">5 Step by step</a></li>
-    <li><a href="#methods">6 Methods</a></li><li><a href="#bayes">6b Bayes v0 (internal)</a></li><li><a href="#results">7 Results</a></li><li><a href="#problems">8 Problems &amp; fixes</a></li>
+    <li><a href="#methods">6 Methods</a></li><li><a href="#dragen">6a DRAGEN</a></li><li><a href="#bayes">6b Bayes v0 (internal)</a></li><li><a href="#results">7 Results</a></li><li><a href="#problems">8 Problems &amp; fixes</a></li>
     <li><a href="#limits">9 Limitations</a></li><li><a href="#repro">10 Reproduce</a></li><li><a href="#timeline">Timeline</a></li>
   </ol></nav>
 
@@ -328,6 +335,41 @@ mamba create -n ctyper  -c conda-forge -c bioconda ctyper=1.0.5                #
   </section>
 
 
+  <section id="dragen" aria-labelledby="h-dragen">
+    <h2 id="h-dragen"><span class="num">6a</span>DRAGEN: how it works, how it was run, and where it disagrees</h2>
+    <div class="callout"><b>We did not run DRAGEN</b>DRAGEN is Illumina's commercial secondary-analysis pipeline. Illumina re-processed all 3,202 1000 Genomes 30x genomes with three releases and put the outputs in public S3 buckets (commands in 3b). We downloaded only each person's SMN and α-globin result files and parsed them with <code>11_dragen_table.py</code>.</div>
+    <div class="scroll"><table>
+      <thead><tr><th>Release</th><th>Bucket</th><th>Reference (as named in the bucket)</th><th>SMN</th><th>α-globin</th><th>Files parsed</th><th>Fields used</th></tr></thead>
+      <tbody>
+        <tr><td><b>4.0.3</b></td><td class="mono">1000genomes-dragen-v4.0.3</td><td class="mono">hg38-alt-masked-v2-graph</td><td>yes</td><td>no caller yet</td><td class="mono">&lt;id&gt;.smn.tsv</td><td>SMN1, SMN2, SMN2Δ7–8 CN; raw total and full-length CN; 8 per-site SMN1 values; isSMA, isCarrier</td></tr>
+        <tr><td><b>4.2.7</b></td><td class="mono">1000genomes-dragen-v4-2-7</td><td class="mono">hg38_alt_masked_graph_v3</td><td>yes</td><td>yes</td><td class="mono">&lt;id&gt;.final.smn.tsv, &lt;id&gt;.final.targeted.json</td><td>as above + HBA genotype (e.g. <code>-a3.7/aa</code>), filter, quality</td></tr>
+        <tr><td><b>4.4.7</b></td><td class="mono">1000genomes-dragen-v4-4-7</td><td class="mono">hg38-alt_masked.cnv.graph.hla.methyl_cg.rna-11-r5.0-2</td><td>yes</td><td>yes</td><td class="mono">&lt;id&gt;.targeted.json</td><td>SMN1/SMN2/Δ7–8 CN, raw totals, HBA genotype (no per-site values, no isSMA/isCarrier)</td></tr>
+      </tbody></table></div>
+    <p>All three align reads with DRAGEN's own aligner to GRCh38 with its alt contigs masked, extended with a graph of known population variation. 4.4.7 uses a newer generation of the graph (r5.0, which Illumina calls the “multigenome” reference, built from population genome assemblies). There is no DRAGEN run on CHM13.</p>
+    <div class="grid">
+      <div class="card"><h3>SMN caller</h3><p>DRAGEN's built-in version of SMNCopyNumberCaller (Chen et al. 2020):</p><p>
+        1 · <b>pool the twins</b>: reads on SMN1 and SMN2 are counted together at any MAPQ, so it no longer matters which twin the aligner picked;<br>
+        2 · <b>total from depth</b>: pooled depth ÷ depth in normal two-copy regions × 2 = raw total (e.g. 4.01), turned into a whole number by a mixture model. Depth over exons 7–8 alone gives the full-length copies; the difference = SMN2Δ7–8 copies;<br>
+        3 · <b>split with the twin letters</b>: at each SMN1/SMN2-distinguishing site, SMN1-letter read share × total = a per-site SMN1 estimate; the sites are combined into one SMN1 call and SMN2 = full-length − SMN1;<br>
+        4 · <b>flags</b>: SMN1 0 → isSMA, 1 → isCarrier.</p></div>
+      <div class="card"><h3>α-globin caller (4.2.7+)</h3><p>One of the “targeted callers”. From depth patterns across the HBA locus it calls the common deletions and duplications (−α3.7, −α4.2, −−SEA, ααα3.7, ααα4.2 and others) and reports a two-allele genotype. We turn it into a total gene count (<code>aa/aa</code> = 4, <code>-a3.7/aa</code> = 3, <code>aaa3.7/aa</code> = 5, <code>--/aa</code> = 2).</p></div>
+      <div class="card"><h3>Why three releases = one method</h3><p>The SMN algorithm and the reads are the same. A new reference changes <i>which twin</i> a read is placed on, but step 1 pools the twins. The raw values agree to the second decimal (HG02668 total 4.94 / 4.93 / 4.93), and every call is identical. Accuracy: SMN1 205/206, SMN2 (incl. Δ7–8) 202/206, SMN total 201/206, α-globin 220/221, the same in every release. So the three scoreboard rows are not independent confirmations.</p></div>
+    </div>
+    <h3>All 6 people where DRAGEN and the assembly truth disagree</h3>
+    <p>The SMN1 scoreboard shows only one miss (HG02668), but the other targets add five more people. ctyper counts k-mers and never aligns, so it is independent of DRAGEN's alignment; naive depth uses the 1kGP alignments.</p>
+    <div class="scroll"><table>
+      <thead><tr><th>Person</th><th>Target</th><th class="n">Truth</th><th class="n">DRAGEN</th><th class="n">DRAGEN raw</th><th class="n">ctyper</th><th class="n">Depth, MAPQ 0</th><th>Most likely</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">HG02668</td><td>SMN1 / total</td><td class="n">2 / 4</td><td class="n">3 / 5</td><td class="n">4.94; sites 2.6–3.3</td><td class="n">3 / 5</td><td class="n">3 / 5–6</td><td class="wrapcell">truth: the assembly collapsed one SMN1 copy</td></tr>
+        <tr><td class="mono">HG00597</td><td>SMN total</td><td class="n">3</td><td class="n">4</td><td class="n">4.01</td><td class="n">4</td><td class="n">4</td><td class="wrapcell">truth: the assembly is missing an SMN2 copy (haplotype 2)</td></tr>
+        <tr><td class="mono">HG00658</td><td>SMN total</td><td class="n">3</td><td class="n">4</td><td class="n">4.00</td><td class="n">4</td><td class="n">4</td><td class="wrapcell">truth: the assembly is missing an SMN2 copy (haplotype 1)</td></tr>
+        <tr><td class="mono">NA18959</td><td>SMN total</td><td class="n">5</td><td class="n">4</td><td class="n">4.00</td><td class="n">4</td><td class="n">4</td><td class="wrapcell">truth: an extra SMN2 copy (false duplication)</td></tr>
+        <tr><td class="mono">HG00253</td><td>α-globin total</td><td class="n">6</td><td class="n">4</td><td class="n">n/a</td><td class="n">5</td><td class="n">4–5</td><td class="wrapcell">truth: the ~150 kb block is duplicated in the assembly, but HBZ depth is 2.03</td></tr>
+        <tr><td class="mono">NA20905</td><td>SMN total</td><td class="n">5</td><td class="n">4</td><td class="n">4.49 (full-length 3.91)</td><td class="n">6</td><td class="n">4</td><td class="wrapcell"><b>DRAGEN</b>: it missed an SMN2Δ7–8 partial copy, which raised total depth by only ~0.5, and reported Δ7–8 = 0</td></tr>
+      </tbody></table></div>
+    <div class="callout"><b>What this means</b>In 5 of 6 disagreements every read-based method agrees with DRAGEN and not with the assembly, and DRAGEN's raw depth sits on a clean whole number. These are most likely assembly errors: identical tandem copies are exactly what assemblers sometimes collapse or duplicate. DRAGEN's true accuracy is probably above the 97.6–99.5% scored, and the truth caps what this benchmark can resolve. We did not correct the truth automatically, to keep it independent of the methods it judges.</div>
+  </section>
+
   <section id="bayes" aria-labelledby="h-bayes">
     <h2 id="h-bayes"><span class="num">6b</span>Internal experiment: the Bayes v0 caller (not in the deliverable)</h2>
     <div class="callout"><b>Status</b>Written overnight as a starting point for the team (<code>caller/bayes_cn.py</code>). It works, but it is <b>not an independent method</b>: its population prior and its SMN site-bias calibration both use DRAGEN 4.2.7 calls. So it was left out of the benchmark and the toolbox to keep the comparison clean. It is documented here so the team can build on it.</div>
@@ -384,7 +426,7 @@ then normalise over the 36 cells → posterior; the call is the most likely cell
       <li><b>Discarding ambiguous reads makes these genes invisible:</b> SMN1 is right in 0% of people at MAPQ ≥ 20, on both references.</li>
       <li><b>CHM13 fixes reference errors, not real twins:</b> median CBS copy number at MAPQ ≥ 20 is 0.27 on GRCh38 and 2.27 on CHM13; SMN stays dark on both.</li>
       <li><b>The twin-specific letters are what work:</b> DRAGEN 99.5%, ctyper 91%. α-globin is harder for ctyper (76.5%), mostly by calling a third allele in GC-rich, noisy depth.</li>
-      <li><b>The truth is solid but not perfect:</b> it agrees with DRAGEN in 201/206 (SMN) and 220/221 (α-globin) people. In one case (HG00253) the assembly is the likely error: it contains the α-globin region twice while the reads show normal depth.</li>
+      <li><b>The truth is solid but not perfect:</b> it agrees with DRAGEN in 201/206 (SMN) and 220/221 (α-globin) people. Of the 6 disagreeing people, 5 look like assembly errors (all read-based methods side with DRAGEN; see 6a), and one (NA20905) is a real DRAGEN miss of a partial SMN2Δ7–8 copy.</li>
     </ul>
     <div class="figs2">
       <figure><img src="img/fig_pangraph_SMN_haplotypes.png" alt="Structures of 16 SMN haplotypes and both references"><figcaption><b>Every SMN region is built differently.</b> 16 assembled haplotypes plus GRCh38 and CHM13, from MARVELD2 to BDP1 (0.8–3 Mb). Blue = SMN1, orange = SMN2, by our sequence typing.</figcaption></figure>
@@ -463,5 +505,16 @@ python scripts/14_export_explorer.py && python scripts/19_build_site.py   # → 
 
   <footer>Built at the BioDATA ASCENT code-a-thon, CSHL. All data are public releases from 1000 Genomes (NYGC), the T2T Consortium / AnVIL, HPRC, Illumina DRAGEN reanalyses, ctyper and Locityper (Zenodo).</footer>
 </div>
+<script>
+(function () {
+  const root = document.documentElement, lab = document.getElementById("themeLab");
+  const isDark = () => root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  const sync = () => { lab.textContent = isDark() ? "Light mode" : "Dark mode"; };
+  document.getElementById("themeBtn").onclick = () => { const t = isDark() ? "light" : "dark"; root.dataset.theme = t; try { localStorage.setItem("dct-theme", t); } catch (e) {} sync(); };
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", sync);
+  new MutationObserver(sync).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+  sync();
+})();
+</script>
 </body>
 </html>
