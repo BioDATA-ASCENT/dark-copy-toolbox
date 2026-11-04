@@ -811,7 +811,7 @@ function drawPatients() {
   $("#patients").innerHTML = D.sim.patients.map((p) => `<div class="pcard ${state.pt === p.id ? "active" : ""}"><b>Patient ${p.id}</b>
     <span class="mono">${reveal ? `${p.label} · truth SMN1 = ${p.SMN1}, SMN2 = ${p.SMN2}` : "genotype hidden"}</span>
     <span>${(p.n_reads / 1000).toFixed(0)}k reads simulated at ${p.coverage}x · haplotypes ${p.haplotypes.map((h) => h.split("#").slice(0, 2).join("#")).join(" + ")}</span>
-    <div class="row"><button type="button" data-pt="${p.id}">Genotype</button><a href="${p.fastq}" download>FASTQ (${p.fastq_mb} MB)</a></div></div>`).join("");
+    <div class="row"><button type="button" data-pt="${p.id}">Genotype</button><a href="https://jacgonisa.github.io/dark-copy-toolbox/${p.fastq}" target="_blank" rel="noopener">FASTQ (${p.fastq_mb} MB)</a></div></div>`).join("");
   $("#patients").querySelectorAll("button").forEach((b) => (b.onclick = () => { state.pt = b.dataset.pt; drawPatients(); }));
   if (state.pt) { const p = D.sim.patients.find((x) => x.id === state.pt);
     if (p) showGenotype(summariseHits(p.hits, Math.min(1, +state.cov / p.coverage)), `Patient ${p.id} at ${Math.min(+state.cov, p.coverage)}x`, reveal ? p : null); else if (state.upload) showGenotype(state.upload.cnt, state.upload.name, null); }
