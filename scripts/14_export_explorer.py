@@ -145,6 +145,8 @@ def main():
         if r["target"] == f"CONTROL_{ctrl}" and r["truth"] != "":
             ct[r["sample"]] = int(r["truth"])
     data["control"] = {"gene": ctrl, "truth": ct}
+    sim = os.path.join(OUT, "sim.json")
+    data["sim"] = json.load(open(sim)) if os.path.exists(sim) else None
     pg = os.path.join(OUT, "pangraph.json")
     data["pangraph"] = json.load(open(pg)) if os.path.exists(pg) else {}
     data["meta"] = dict(n_selected=len(sel), n_truth=len(truth), refs=list(data["caller"].keys()),

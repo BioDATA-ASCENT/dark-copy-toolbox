@@ -109,7 +109,7 @@ footer { font-size: 13px; color: var(--muted); }
 
   <nav class="toc" aria-label="Contents"><ol>
     <li><a href="#glance">At a glance</a></li><li><a href="#question">1 Question</a></li><li><a href="#rules">2 Ground rules</a></li>
-    <li><a href="#data">3 Data</a></li><li><a href="#pipeline">4 Pipeline</a></li><li><a href="#phases">5 Step by step</a></li>
+    <li><a href="#data">3 Data</a></li><li><a href="#commands">3b Exact commands</a></li><li><a href="#pipeline">4 Pipeline</a></li><li><a href="#phases">5 Step by step</a></li>
     <li><a href="#methods">6 Methods</a></li><li><a href="#results">7 Results</a></li><li><a href="#problems">8 Problems &amp; fixes</a></li>
     <li><a href="#limits">9 Limitations</a></li><li><a href="#repro">10 Reproduce</a></li><li><a href="#timeline">Timeline</a></li>
   </ol></nav>
@@ -165,6 +165,110 @@ footer { font-size: 13px; color: var(--muted); }
     <div class="callout"><b>Why region slicing matters</b>One whole 1000 Genomes CRAM is about 15.8 GB, so 650 people on two references would be ~20 TB. The slices cover ~4.6 Mb per reference (three regions plus 30 control blocks of 100 kb) and average ~24 MB each: 31 GB in total, about 0.15% of the full data.</div>
   </section>
 
+
+  <section id="commands" aria-labelledby="h-cmd">
+    <h2 id="h-cmd"><span class="num">3b</span>Exact download commands and source locations</h2>
+    <p>Every external resource, where it lives and the exact command that fetched it. All access is anonymous (<code>--no-sign-request</code> or plain HTTPS). URLs live in <code>config/config.yaml</code>, and the commands come from the scripts named in each heading. Plain HTTPS downloads go through <code>fetch()</code> in <code>scripts/lib.sh</code>: <code>aria2c -x4 -s4 -c</code>, falling back to <code>curl -fsSL --retry 3 -C -</code>, with an md5 check wherever the source publishes one.</p>
+
+    <h3>1000 Genomes metadata (01_fetch_metadata.sh)</h3>
+<pre><code># pedigree + populations (EBI FTP over HTTP)
+aria2c -x4 -s4 -c http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/working/1kGP.3202_samples.pedigree_info.txt
+aria2c -x4 -s4 -c http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/20130606_g1k_3202_samples_ped_population.txt
+# sequence indexes (EBI first; the 698-related index failed there and came from the S3 mirror)
+aria2c -x4 -s4 -c http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/data_collections/1000G_2504_high_coverage/1000G_2504_high_coverage.sequence.index
+aws s3 cp --no-sign-request s3://1000genomes/1000G_2504_high_coverage/additional_698_related/1000G_698_related_high_coverage.sequence.index .
+# list every CRAM/CRAI on S3 (3,202 people)
+aws s3 ls --no-sign-request --recursive s3://1000genomes/1000G_2504_high_coverage/data/
+aws s3 ls --no-sign-request --recursive s3://1000genomes/1000G_2504_high_coverage/additional_698_related/data/</code></pre>
+
+    <h3>HPRC release-2 tables and the SMN site list (01_fetch_metadata.sh)</h3>
+<pre><code>aria2c -x4 -s4 -c https://raw.githubusercontent.com/human-pangenomics/hprc_intermediate_assembly/main/data_tables/assemblies_release2_v1.0.index.csv
+aria2c -x4 -s4 -c https://raw.githubusercontent.com/human-pangenomics/hprc_intermediate_assembly/main/data_tables/annotation/cat/cat_genes_hprc_r2_v1.3.index.csv
+aria2c -x4 -s4 -c https://raw.githubusercontent.com/human-pangenomics/hprc_intermediate_assembly/main/data_tables/sequencing_data/data_illumina_release2_v1.0.index.csv
+aria2c -x4 -s4 -c https://raw.githubusercontent.com/Illumina/SMNCopyNumberCaller/master/data/SMN_region_38.bed
+aria2c -x4 -s4 -c https://raw.githubusercontent.com/Illumina/SMNCopyNumberCaller/master/data/SMN_SNP_38.txt</code></pre>
+
+    <h3>References and annotation (02_fetch_references.sh): the only whole-genome files</h3>
+<pre><code># GRCh38 analysis set used by the 1kGP alignments (S3 mirror first, EBI as fallback)
+aws s3 cp --no-sign-request s3://1000genomes/technical/reference/GRCh38_reference_genome/GRCh38_full_analysis_set_plus_decoy_hla.fa .
+samtools faidx GRCh38_full_analysis_set_plus_decoy_hla.fa
+# T2T-CHM13v2.0
+aria2c -x4 -s4 -c https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/GCA_009914755.4/chm13v2.0.fa.gz
+pigz -dc chm13v2.0.fa.gz &gt; chm13v2.0.fa &amp;&amp; samtools faidx chm13v2.0.fa
+# CHM13 gene annotation + segmental duplications (chosen from a listing of the annotation folder)
+aws s3 ls --no-sign-request s3://human-pangenomics/T2T/CHM13/assemblies/annotation/
+aws s3 cp --no-sign-request s3://human-pangenomics/T2T/CHM13/assemblies/annotation/chm13v2.0_RefSeq_Liftoff_v5.2.gff3.gz .
+aws s3 cp --no-sign-request s3://human-pangenomics/T2T/CHM13/assemblies/annotation/chm13v2.0_SD.bed .
+# GRCh38 genes (GENCODE v49 basic), UCSC segmental duplications, GRCh38→CHM13 chain
+aria2c -x4 -s4 -c https://ftp.ebi.ac.uk/pub/databases/gencode/Gencode_human/release_49/gencode.v49.basic.annotation.gtf.gz
+aria2c -x4 -s4 -c https://hgdownload.soe.ucsc.edu/goldenPath/hg38/database/genomicSuperDups.txt.gz
+aria2c -x4 -s4 -c https://s3-us-west-2.amazonaws.com/human-pangenomics/T2T/CHM13/assemblies/chain/v1_nflo/grch38-chm13v2.chain</code></pre>
+
+    <h3>Locating the CHM13 alignments (04_resolve_chm13_crams.py)</h3>
+<pre><code># AnVIL Azul index API (no login): default catalog → dataset "ANVIL_T2T_CHRY" → its CRAM/CRAI files (paged, 250 per page)
+GET https://service.explore.anvilproject.org/index/catalogs
+GET https://service.explore.anvilproject.org/index/files?catalog=&lt;default&gt;&amp;size=250
+      &amp;filters={"datasets.title":{"is":["ANVIL_T2T_CHRY"]},"files.file_format":{"is":[".cram",".crai"]}}
+# each record's azul_mirror_uri is a public S3 object with a hashed name, e.g. for HG00096:
+#   CRAM https://anvilproject.s3.amazonaws.com/file/71d42a36eb86dbf3b0bcca7fe02eb864.md5   (12.5 GB, never downloaded)
+#   CRAI https://anvilproject.s3.amazonaws.com/file/62e0f69e223ab4abf17f92fe5b326826.md5</code></pre>
+
+    <h3>Region slices, the main data (06_slice_crams.sh), shown for HG00097</h3>
+<pre><code># 1. download only the CRAM index (~1–2 MB)
+aws s3 cp --no-sign-request s3://1000genomes/1000G_2504_high_coverage/data/ERR3240115/HG00097.final.cram.crai data/crai/grch38/HG00097.crai
+# 2. stream only the reads overlapping our regions from the remote CRAM (the 15.8 GB file is never downloaded)
+samtools view -@ 2 -T GRCh38_full_analysis_set_plus_decoy_hla.fa -M -L data/regions/grch38.slice.bed -C \
+  -o HG00097.grch38.cram \
+  -X https://1000genomes.s3.amazonaws.com/1000G_2504_high_coverage/data/ERR3240115/HG00097.final.cram data/crai/grch38/HG00097.crai
+samtools index HG00097.grch38.cram
+# CHM13: identical, with -T chm13v2.0.fa, -L data/regions/chm13.slice.bed and the hashed AnVIL CRAM/CRAI URLs above
+# run for 650 people × 2 references, 8 in parallel (xargs -P 8); before slicing, local FASTA MD5s were checked against the CRAM @SQ M5 tags</code></pre>
+
+    <h3>HPRC assemblies: region-only reads (08_truth_from_assemblies.py, 15_locus_haplotypes.py), shown for HG00097 hap1</h3>
+<pre><code># small index files, downloaded once per haplotype (s3:// rewritten to https://&lt;bucket&gt;.s3.amazonaws.com/)
+curl -o HG00097_hap1.fai https://human-pangenomics.s3.amazonaws.com/working/HPRC/HG00097/assemblies/release2/HG00097_hap1_hprc_r2_v1.0.1.fa.gz.fai
+curl -o HG00097_hap1.gzi https://human-pangenomics.s3.amazonaws.com/working/HPRC/HG00097/assemblies/release2/HG00097_hap1_hprc_r2_v1.0.1.fa.gz.gzi
+# gene annotation (CAT), streamed and filtered to our genes
+curl https://human-pangenomics.s3.amazonaws.com/working/HPRC/HG00097/assemblies/release2/annotation/cat/HG00097_hap1_hprc_r2_v1.0.1_cat_v1.3.gff3.gz | gunzip | grep ...
+# the locus itself: byte-range reads from the remote bgzipped FASTA
+samtools faidx --fai-idx HG00097_hap1.fai --gzi-idx HG00097_hap1.gzi \
+  https://human-pangenomics.s3.amazonaws.com/working/HPRC/HG00097/assemblies/release2/HG00097_hap1_hprc_r2_v1.0.1.fa.gz \
+  "HG00097#1#&lt;contig&gt;:&lt;start&gt;-&lt;end&gt;"      # the contig carrying the genes (from CAT), gene span ± 200 kb (SMN) / 20 kb (HBA)</code></pre>
+
+    <h3>DRAGEN reanalyses (07_fetch_precomputed.sh)</h3>
+<pre><code># list each public bucket once
+aws s3 ls --no-sign-request --recursive s3://1000genomes-dragen-v4.0.3/ | gzip &gt; listing.txt.gz
+aws s3 ls --no-sign-request --recursive s3://1000genomes-dragen-v4-2-7/ | gzip &gt; listing.txt.gz
+aws s3 ls --no-sign-request --recursive s3://1000genomes-dragen-v4-4-7/ | gzip &gt; listing.txt.gz
+# keep our 650 people and only these files: smn.tsv, targeted.json/.vcf.gz, cnv_metrics, ploidy_estimation_metrics,
+# wgs_coverage_metrics (HLA folders excluded); then 16 parallel path-style HTTPS downloads in the bucket's region:
+curl -fsS --retry 3 -o HG00097.smn.tsv \
+  https://s3.&lt;region&gt;.amazonaws.com/1000genomes-dragen-v4.0.3/data/individuals/hg38-alt-masked-v2-graph/HG00097/HG00097.smn.tsv
+#   v4.2.7 folder: data/individuals/hg38_alt_masked_graph_v3/&lt;ID&gt;/&lt;ID&gt;.final.smn.tsv, .final.targeted.json
+#   v4.4.7 folder: data/individuals/hg38-alt_masked.cnv.graph.hla.methyl_cg.rna-11-r5.0-2/&lt;ID&gt;/&lt;ID&gt;.targeted.json
+# (&lt;region&gt; is read from the bucket's x-amz-bucket-region header: curl -sI https://s3.amazonaws.com/&lt;bucket&gt;/)</code></pre>
+
+    <h3>Locityper and ctyper (07_fetch_precomputed.sh; ctyper matrix in S8)</h3>
+<pre><code># Locityper, Zenodo record 15879519 (md5 checked), then the db and benchmark tarballs unpacked
+for f in README.md 1kgp_genotypes.csv.gz locityper-benchmarking.tar.gz bg-1kgp.tar.gz db.tar.gz; do
+  aria2c -x4 -s4 -c "https://zenodo.org/records/15879519/files/$f?download=1"; done
+# ctyper, Zenodo record 16340156 (md5 checked)
+for f in PangenomeAlleles_typefix.v1.0.tsv PangenomeAlleles_annotationfix.tsv.gz Allalters.fa.xz; do
+  aria2c -x4 -s4 -c "https://zenodo.org/records/16340156/files/$f?download=1"; done
+# k-mer matrix, fetched when ctyper was run (S8); exact commands used:
+for f in HprcCpcHgsvc_cmr_matrix.txt.gz HprcCpcHgsvc_cmr_matrix.txt.index HprcCpcHgsvc_cmr_matrix.txt.bgd; do
+  curl -sL -o $f https://zenodo.org/records/16340156/files/$f; done
+md5sum HprcCpcHgsvc_cmr_matrix.txt.*        # matched the md5s in config/config.yaml
+# ctyper source tarball, read for its README only (nothing in it was executed)
+curl -sL -o ctyper-v1.0.tar.gz https://zenodo.org/records/16340156/files/ctyper-v1.0.tar.gz</code></pre>
+
+    <h3>Software environments</h3>
+<pre><code>mamba env create -f environment.yml                                        # darkdosage: samtools, minimap2, CrossMap, aws-cli, python…
+mamba create -n pggb074 -c conda-forge -c bioconda "pggb=0.7.4" "python=3.12"   # pangenome graphs (S7)
+mamba create -n ctyper  -c conda-forge -c bioconda ctyper=1.0.5                # ctyper (S8)</code></pre>
+    <p class="mono" style="font-size:12.5px;color:var(--muted)">Nothing else was downloaded. The simulated patients (S10) are generated locally from the HPRC haplotypes already fetched above.</p>
+  </section>
+
   <section id="pipeline" aria-labelledby="h-pipe">
     <h2 id="h-pipe"><span class="num">4</span>The pipeline in one picture</h2>
     <div class="flow">
@@ -201,6 +305,7 @@ footer { font-size: 13px; color: var(--muted); }
       <div class="phase"><div class="id">S6<small>toolbox</small></div><div class="body"><p>Exported depth profiles, sufficient statistics for the caller and all calls into one JSON file inlined into a static web page. It needs no server, so it works offline and on GitHub Pages.</p><div class="meta"><span>14_export_explorer.py</span><span>explorer/template.html</span></div></div></div>
       <div class="phase"><div class="id">S7<small>pangenome</small></div><div class="body"><p>Built local pangenome graphs with <b>pggb 0.7.4</b> from complete haplotypes (16 for SMN, 48 for HBA) plus both references, anchor to anchor, read remotely. SMN: 35.7 Mb of sequence folds into a <b>1.01 Mb</b> graph. No reads were aligned to the graphs.</p><div class="meta"><span>15_locus_haplotypes.py</span><span>16_pangraph_figures.py</span></div></div></div>
       <div class="phase"><div class="id">S8<small>ctyper</small></div><div class="body"><p>Ran <b>ctyper 1.0.5</b> (k-mer counting against pangenome alleles, no mapping) on every slice with the person's measured depth. We cut its 2.6 GB matrix down to the SMN, HBA, CBS and U2AF1 groups and converted each called allele to genes with its annotation. Calibration on 5 truth people showed it needs the <i>haploid</i> 31-mer depth (read depth × 120/150 ÷ 2).</p><div class="meta"><span>17_ctyper_subset.py</span><span>18_ctyper_run.py</span><span>1,298/1,298 runs, ~1 s each</span></div></div></div>
+      <div class="phase"><div class="id">S10<small>patients</small></div><div class="body"><p>Three <b>simulated patients</b>, each made of two real HPRC SMN haplotypes: SMA-affected (SMN1 0, SMN2 4), carrier (1, 3) and unaffected (2, 2). 150 bp paired reads at 10x, 0.3% errors, 400 bp fragments. Genotyped <b>without alignment</b> by counting 31-mers from a GRCh38-only panel (MARVELD2 control, SMN1∩SMN2 gene k-mers, SMN1/SMN2 k-mers at 13 unique twin sites), then the same Bayesian model as S5 with no population prior. Exact calls in 60/60 subsampled runs at 10x, 59/60 at 5x and 53/60 at 2x. The toolbox does the same counting in the browser on any FASTQ you drop in.</p><div class="meta"><span>20_simulate_patients.py</span><span>docs/sim/patient_{A,B,C}.fq.gz</span></div></div></div>
     </div>
   </section>
 
@@ -289,6 +394,7 @@ python scripts/16_pangraph_figures.py
 # ctyper (separate env: ctyper 1.0.5)
 python scripts/17_ctyper_subset.py && python scripts/18_ctyper_run.py && python scripts/13_concordance.py
 
+python scripts/20_simulate_patients.py   # simulated patients + k-mer panel (S10)
 python scripts/14_export_explorer.py && python scripts/19_build_site.py   # → docs/ (this site)</code></pre>
     <p>All settings (sample counts, loci, URLs, md5s, tool environments) are in <code>config/config.yaml</code>; every judgement call is in <code>DECISIONS.md</code>; the original plan is <code>PLAN.md</code>.</p>
   </section>
@@ -306,6 +412,8 @@ python scripts/14_export_explorer.py && python scripts/19_build_site.py   # → 
       <div><span class="t">12:40</span>Local pangenome graphs (pggb) for SMN and α-globin</div>
       <div><span class="t">13:11</span>ctyper run on all 1,298 slices</div>
       <div><span class="t">14:08</span>Explorer redesigned as the step-by-step Dark Copy Toolbox</div>
+      <div><span class="t">14:20</span>RAD17 positive control; site published on GitHub Pages</div>
+      <div><span class="t">14:24</span>Simulated SMA patients genotyped alignment-free; in-browser FASTQ genotyping</div>
     </div>
   </section>
 

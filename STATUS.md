@@ -53,3 +53,6 @@
 | 2026-11-04 14:19 | S3_concordance | DONE | 55 method×target cells; 11 disagreements in truth_crosscheck.tsv |
 | 2026-11-04 14:20 | S6_explorer | DONE | reports/explorer/data.json (4.1 MB) |
 | 2026-11-04 14:20 | S9_site | DONE | docs/index.html + docs/outline.html |
+| 2026-11-04 14:24 | S10_sim | DONE | 2x: 53/60 exact; 5x: 59/60 exact; 10x: 60/60 exact |
+| 2026-11-04 14:28 | S6_explorer | DONE | reports/explorer/data.json (4.7 MB) |
+| 2026-11-04 14:28 | S9_site | DONE | docs/index.html + docs/outline.html |

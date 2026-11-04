@@ -105,7 +105,7 @@ zenodo:
       HprcCpcHgsvc_cmr_matrix.txt.gz: b031b2103ad98312a6b173de9b4015e6
       HprcCpcHgsvc_cmr_matrix.txt.bgd: 4cb9d8c44b5a410fbfbcaa1f86fd6605
       HprcCpcHgsvc_cmr_matrix.txt.index: 623048c3617a9ae7d42b0b0e739f0dfc
-fetch_ctyper_matrix: false
+fetch_ctyper_matrix: true    # set true on 2026-11-04 when ctyper was run (S8); the matrix was first fetched by hand with the curl commands in the outline
 
 # Illumina DRAGEN reanalyses of all 3,202 1kGP samples (public, us-east-1/us-west-2).
 # v4.2.7 uses a graph-augmented hg38; v4.4.7 uses DRAGEN's multigenome (pangenome) reference.
@@ -134,3 +134,19 @@ ctyper:
 # Positive control: a unique single-copy gene inside the SMN slice (left anchor). Truth = annotated copies per
 # assembly haplotype (CAT), summed over both haplotypes. Plain read depth should get it right.
 control_gene: RAD17
+
+# S10 simulated patients (scripts/20): real HPRC SMN haplotypes, simulated short reads, alignment-free genotyping
+simulation:
+  coverage: 10            # diploid read depth of the demo FASTQs
+  read_length: 150
+  frag_mean: 400
+  frag_sd: 50
+  error_rate: 0.003
+  seed: 7
+  kmer_step: 4            # keep every 4th ctrl/gene k-mer (panel size for the browser)
+  eval_coverages: [2, 5, 10]
+  eval_reps: 20
+  patients:
+    - {id: A, label: "SMA-affected", haplotypes: ["HG02132#1#CM086896.1", "HG03583#2#JBHIKB010000004.1"], SMN1: 0, SMN2: 4}
+    - {id: B, label: "SMA carrier", haplotypes: ["HG03583#2#JBHIKB010000004.1", "NA18948#2#JBKACD010000005.1"], SMN1: 1, SMN2: 3}
+    - {id: C, label: "Unaffected", haplotypes: ["HG02004#2#JBHDRU010000048.1", "NA18508#1#CM089649.1"], SMN1: 2, SMN2: 2}
