@@ -3,7 +3,7 @@
 inline it into reports/explorer/index.html (built from explorer/template.html).
 
 Contents: locus geometry (genes, PSVs) per reference, depth profiles (MAPQ>=0 / >=20, re-binned for size) for
-every truth sample + population quantiles over all sliced samples, per-sample truth / DRAGEN / naive calls,
+every truth sample + population quantiles over all sliced samples, per-sample truth / ctyper / naive calls,
 the per-person calls of every benchmarked method (the experimental Bayes v0 caller is excluded), the MAPQ ladder,
 and the concordance table.
 """
@@ -25,7 +25,7 @@ os.makedirs(OUT, exist_ok=True)
 REBIN = {"SMN": 5, "HBA": 2, "CHR21_FALSEDUP": 2}  # merge this many native bins per displayed bin
 DETAIL_GENES, DETAIL_PAD = ["SMN1", "SMN2"], 40_000  # native-resolution zoom data around these genes
 
-EXCLUDE_METHODS = ("bayes_",)  # the experimental Bayes v0 caller (caller/bayes_cn.py) is not part of the deliverable
+EXCLUDE_METHODS = ("bayes_", "dragen_")  # not in the deliverable: Bayes v0 (internal experiment) and DRAGEN (purpose-built SMN/HBA caller; see outline 6a)
 
 
 def tsv(fn):
@@ -146,10 +146,6 @@ def main():
                 samples={samples[i]: pack(dcn[i]) for i in keep})
 
     # ---- per-sample table
-    dragen = defaultdict(dict)
-    for r in tsv(path("tables", "dragen_calls.tsv")):
-        dragen[r["sample"]][r["dragen_version"]] = {k: r[k] for k in ["SMN1_CN", "SMN2_CN", "SMN2_del78_CN", "SMN_total_CN_raw",
-                                                                      "HBA_genotype", "HBA_total_copies"]}
     cty = defaultdict(dict)
     for r in tsv(path("tables", "ctyper_calls.tsv")):
         cty[r["sample"]][r["ref"]] = {k: r[k] for k in ["SMN1", "SMN2", "SMN_partial", "SMN_alleles", "HBA_total", "HBA_alleles", "CBS", "U2AF1"]}
@@ -161,7 +157,7 @@ def main():
             tr = {k: t[k] for k in ["n_haps", "SMN1", "SMN2", "SMN_del7-8", "SMN?", "SMN_converted", "HBA1", "HBA2",
                                     "HBA_hybrid", "HBA_total", "usable_SMN", "usable_HBA", "flags"]}
         data["samples"].append(dict(id=s, role=r["role"], pop=r["population"], superpop=r["superpop"], sex=r["sex"],
-                                    truth=tr, dragen=dragen.get(s, {}), ctyper=cty.get(s) or None))
+                                    truth=tr, ctyper=cty.get(s) or None))
     # per-person calls for every scored method (truth samples only) so the page can stratify and add CIs
     calls = defaultdict(lambda: defaultdict(dict))
     for r in tsv(path("tables", "calls_long.tsv")):

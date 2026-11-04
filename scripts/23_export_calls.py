@@ -2,14 +2,12 @@
 """S13 — every exact call of the benchmarked methods, as downloadable tables and one browsable page.
 
 Inputs (all already computed): data/tables/calls_long.tsv (integer calls + truth, 13_concordance.py),
-data/tables/depth.{ref}.tsv.gz (unrounded naive CN, 09), data/tables/dragen_calls.tsv (11),
-data/tables/ctyper_calls.tsv (18), data/meta/…ped_population.txt.
+data/tables/depth.{ref}.tsv.gz (unrounded naive CN, 09), data/tables/ctyper_calls.tsv (18), data/meta/…ped_population.txt.
 
 Outputs (docs/ = GitHub Pages):
   docs/calls/calls_wide.tsv     one row per person: population, truth, then <method>.<target> integer calls
-  docs/calls/calls_long.tsv     sample, method, target, call, truth (Bayes v0 rows excluded, as in the toolbox)
+  docs/calls/calls_long.tsv     sample, method, target, call, truth (naive depth ×4 and ctyper ×2, as in the toolbox)
   docs/calls/naive_cn.tsv       unrounded naive CN per person × reference × MAPQ threshold × gene (+ control depth)
-  docs/calls/dragen_calls.tsv   DRAGEN fields as parsed (raw totals, per-site SMN1 values, HBA genotype)
   docs/calls/ctyper_calls.tsv   ctyper gene counts and the chosen pangenome alleles
   explorer/calls.data.json      data for docs/calls.html (built by 19_build_site.py from explorer/calls.html)
 """
@@ -24,7 +22,8 @@ from common import status
 
 OUT = os.path.join(REPO_ROOT, "docs", "calls")
 os.makedirs(OUT, exist_ok=True)
-METHODS = ["dragen_4.0.3", "dragen_4.2.7", "dragen_4.4.7", "ctyper_grch38", "ctyper_chm13",
+# DRAGEN (purpose-built SMN/HBA caller) and Bayes v0 are not part of the deliverable; see the outline
+METHODS = ["ctyper_grch38", "ctyper_chm13",
            "naive_grch38_mq0", "naive_chm13_mq0", "naive_grch38_mq20", "naive_chm13_mq20"]
 TARGETS = ["SMN1", "SMN2_all", "SMN_total", "HBA_total", "CONTROL_RAD17"]
 NAIVE_GENES = ["SMN1", "SMN2", "HBA1", "HBA2", "RAD17"]
@@ -67,9 +66,6 @@ def main():
         if r["min_mapq"] in ("0", "20"):
             ctrl[(r["sample"], r["ref"], r["min_mapq"])] = float(r["control_median_depth"])
 
-    dragen = defaultdict(dict)
-    for r in rows(path("tables", "dragen_calls.tsv")):
-        dragen[r["sample"]][r["dragen_version"]] = r
     ctyper = defaultdict(dict)
     for r in rows(path("tables", "ctyper_calls.tsv")):
         ctyper[r["sample"]][r["ref"]] = r
@@ -94,7 +90,7 @@ def main():
                         v = naive[s].get(f"{ref}.{q}.{g}")
                         if v:
                             fh.write(f"{s}\t{ref}\t{q}\t{ctrl.get((s, ref, q), '')}\t{g}\t{v[0]}\t{v[1]}\t{round(v[1])}\n")
-    for name in ("dragen_calls.tsv", "ctyper_calls.tsv"):
+    for name in ("ctyper_calls.tsv",):
         src = list(rows(path("tables", name)))
         keep = [k for k in src[0] if k != "source_files"]
         with open(os.path.join(OUT, name), "w") as fh:
@@ -108,14 +104,12 @@ def main():
         p = pop.get(s, ("", ""))
         d = {"id": s, "pop": p[0], "sp": p[1], "t": [truth[s].get(t) for t in TARGETS],
              "c": [[call[s].get(f"{m}.{t}") for t in TARGETS] for m in METHODS]}
-        # hover details: unrounded naive CN, DRAGEN raw totals/genotype, ctyper raw fields
+        # row details: unrounded naive CN, ctyper gene counts
         nv = {}
         for ref in ["grch38", "chm13"]:
             for q in ("0", "20"):
                 nv[f"{ref}_{q}"] = {g: round(naive[s][f"{ref}.{q}.{g}"][1], 2) for g in NAIVE_GENES if f"{ref}.{q}.{g}" in naive[s]}
         d["naive"] = nv
-        d["dragen"] = {v: {k: r[k] for k in ("SMN1_CN", "SMN2_CN", "SMN2_del78_CN", "SMN_total_CN_raw", "SMN_fulllength_CN_raw",
-                                             "SMN1_CN_raw_sites", "HBA_genotype")} for v, r in dragen[s].items()}
         d["ctyper"] = {ref: {k: r[k] for k in ("SMN1", "SMN2", "SMN_partial", "HBA1", "HBA2")} for ref, r in ctyper[s].items()}
         page["people"].append(d)
     with open(os.path.join(REPO_ROOT, "explorer", "calls.data.json"), "w") as fh:

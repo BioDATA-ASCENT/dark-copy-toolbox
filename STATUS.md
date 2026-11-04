@@ -87,3 +87,6 @@
 | 2026-11-04 18:56 | S9_site | DONE | docs/index.html + docs/outline.html + docs/calls.html |
 | 2026-11-04 18:56 | S9_site | DONE | docs/index.html + docs/outline.html + docs/calls.html |
 | 2026-11-04 18:56 | S9_site | DONE | docs/index.html + docs/outline.html + docs/calls.html |
+| 2026-11-04 19:32 | S13_calls | DONE | docs/calls/*.tsv: 650 people × 6 methods × 5 targets |
+| 2026-11-04 19:34 | S6_explorer | DONE | reports/explorer/data.json (11.2 MB) |
+| 2026-11-04 19:34 | S9_site | DONE | docs/index.html + docs/outline.html + docs/calls.html |

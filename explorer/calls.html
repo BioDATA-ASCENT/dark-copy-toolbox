@@ -65,7 +65,7 @@ table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13
 th, td { padding: 5px 8px; border-bottom: 1px solid var(--rule); white-space: nowrap; background: var(--surface); }
 thead th { position: sticky; z-index: 2; font: 600 11px var(--f-body); color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; text-align: right; cursor: pointer; user-select: none; }
 thead tr.grp th { top: 0; text-align: center; border-bottom: 2px solid; cursor: default; }
-thead tr.grp th.dragen { border-color: var(--g-dragen); } thead tr.grp th.ctyper { border-color: var(--g-ctyper); } thead tr.grp th.naive { border-color: var(--g-naive); } thead tr.grp th.none { border-color: transparent; }
+thead tr.grp th.ctyper { border-color: var(--g-ctyper); } thead tr.grp th.naive { border-color: var(--g-naive); } thead tr.grp th.none { border-color: transparent; }
 thead tr.cols th { top: 29px; }
 thead th.l, td.l { text-align: left; }
 th[aria-sort="ascending"]::after { content: " ▲"; } th[aria-sort="descending"]::after { content: " ▼"; }
@@ -94,7 +94,7 @@ tfoot td { position: sticky; bottom: 0; font-weight: 600; color: var(--ink); bor
   <header style="display:grid;gap:10px">
     <div class="eyebrow">Dark Copy Toolbox · data tables</div>
     <h1>Every call, every person</h1>
-    <p>The exact integer copy numbers each benchmarked method reported for all 650 people, next to the assembly truth where there is one. Click a row for the numbers behind the calls: unrounded naive depth, DRAGEN's raw values, ctyper's gene counts.</p>
+    <p>The exact integer copy numbers from naive read depth and from ctyper for all 650 people, next to the assembly truth where there is one. Click a row for the numbers behind the calls: naive depth before rounding, and ctyper's gene counts.</p>
     <div class="links">
       <a class="btn" href="index.html">← Toolbox</a><a class="btn" href="outline.html">Project outline</a>
       <button type="button" class="themebtn" id="themeBtn" aria-label="Switch between light and dark mode"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg><span id="themeLab">Dark mode</span></button>
@@ -107,10 +107,9 @@ tfoot td { position: sticky; bottom: 0; font-weight: 600; color: var(--ink); bor
       <a href="calls/calls_wide.tsv" target="_blank" rel="noopener"><b>calls_wide.tsv</b><span>One row per person: population, truth, then one column per method × target. What this page shows.</span></a>
       <a href="calls/calls_long.tsv" target="_blank" rel="noopener"><b>calls_long.tsv</b><span>sample · method · target · call · truth. Easiest for R or pandas.</span></a>
       <a href="calls/naive_cn.tsv" target="_blank" rel="noopener"><b>naive_cn.tsv</b><span>Naive depth before rounding: mean depth, control depth, CN, call; per reference × MAPQ × gene.</span></a>
-      <a href="calls/dragen_calls.tsv" target="_blank" rel="noopener"><b>dragen_calls.tsv</b><span>DRAGEN fields as parsed, all 3 releases: raw totals, 8 per-site SMN1 values, α-globin genotype.</span></a>
       <a href="calls/ctyper_calls.tsv" target="_blank" rel="noopener"><b>ctyper_calls.tsv</b><span>ctyper gene counts per reference and the pangenome alleles it chose.</span></a>
     </div>
-    <p class="note">Columns: <span class="mono">SMN2_all</span> = full-length SMN2 + SMN2Δ7–8 copies; totals count both chromosomes. Empty = not reported (4.0.3 has no α-globin caller; only naive depth reports RAD17) or, for truth, the assembly is incomplete at that locus.</p>
+    <p class="note">Columns: <span class="mono">SMN2_all</span> = full-length SMN2 + SMN2Δ7–8 copies; totals count both chromosomes. Empty = not reported (only naive depth reports RAD17) or, for truth, the assembly is incomplete at that locus.</p>
   </section>
 
   <section class="panel" aria-labelledby="h-t">
@@ -119,7 +118,7 @@ tfoot td { position: sticky; bottom: 0; font-weight: 600; color: var(--ink); bor
       <div class="seg" role="group" aria-label="Target" id="tgtSeg"></div>
       <div class="seg" role="group" aria-label="People" id="whoSeg"></div>
       <label class="chk">Show <select id="onlyBad" style="font:13px var(--f-body);padding:5px 6px;border:1px solid var(--rule);border-radius:5px;background:var(--surface);color:var(--ink)">
-        <option value="">everyone</option><option value="dragen">DRAGEN ≠ truth</option><option value="ctyper">ctyper ≠ truth</option><option value="naive0">naive, all reads ≠ truth</option></select></label>
+        <option value="">everyone</option><option value="ctyper">ctyper ≠ truth</option><option value="naive0">naive, all reads ≠ truth</option></select></label>
       <input type="search" id="q" placeholder="ID or population…" aria-label="Search people" size="18">
     </div>
     <div class="legend"><span><span class="sw" style="background:var(--bad-bg);border:1px solid var(--bad)"></span>differs from truth (also bold red)</span><span id="count"></span></div>
@@ -131,7 +130,7 @@ tfoot td { position: sticky; bottom: 0; font-weight: 600; color: var(--ink); bor
 const D = /*CALLS_DATA*/null;
 const $ = (s) => document.querySelector(s);
 const TLAB = { SMN1: "SMN1", SMN2_all: "SMN2 incl. Δ7–8", SMN_total: "SMN total", HBA_total: "α-globin total", CONTROL_RAD17: "Control: RAD17" };
-const MLAB = { "dragen_4.0.3": "4.0.3", "dragen_4.2.7": "4.2.7", "dragen_4.4.7": "4.4.7", ctyper_grch38: "GRCh38", ctyper_chm13: "CHM13",
+const MLAB = { ctyper_grch38: "GRCh38", ctyper_chm13: "CHM13",
   naive_grch38_mq0: "GRCh38 ≥0", naive_chm13_mq0: "CHM13 ≥0", naive_grch38_mq20: "GRCh38 ≥20", naive_chm13_mq20: "CHM13 ≥20" };
 const GROUP = (m) => m.split("_")[0];
 const st = { t: 0, who: "truth", onlyBad: false, q: "", sort: null, dir: 1, open: null };
@@ -159,19 +158,15 @@ function detail(p) {
     return `<tr><td class="l">${lab}</td>${["SMN1", "SMN2", "HBA1", "HBA2", "RAD17"].map((g) => `<td>${o[g] != null ? o[g].toFixed(2) : "–"}</td>`).join("")}</tr>`; };
   const naive = `<div><h3>Naive depth, before rounding (CN = 2 × gene depth ÷ control depth)</h3><table><thead><tr><th class="l">reads</th><th>SMN1</th><th>SMN2</th><th>HBA1</th><th>HBA2</th><th>RAD17</th></tr></thead><tbody>
     ${nv("grch38_0", "GRCh38, MAPQ ≥ 0")}${nv("chm13_0", "CHM13, MAPQ ≥ 0")}${nv("grch38_20", "GRCh38, MAPQ ≥ 20")}${nv("chm13_20", "CHM13, MAPQ ≥ 20")}</tbody></table></div>`;
-  const dv = Object.entries(p.dragen).map(([v, r]) => `<tr><td class="l">${v}</td><td>${esc(r.SMN1_CN)}</td><td>${esc(r.SMN2_CN)}</td><td>${esc(r.SMN2_del78_CN)}</td><td>${esc(r.SMN_total_CN_raw)}</td><td>${esc(r.SMN_fulllength_CN_raw)}</td><td class="l">${esc(r.HBA_genotype || "–")}</td></tr>`).join("");
-  const sites = Object.values(p.dragen).map((r) => r.SMN1_CN_raw_sites).find((x) => x);
-  const dragen = `<div><h3>DRAGEN, as reported</h3><table><thead><tr><th class="l">release</th><th>SMN1</th><th>SMN2</th><th>Δ7–8</th><th>raw total</th><th>raw full-len.</th><th class="l">HBA genotype</th></tr></thead><tbody>${dv || '<tr><td class="l" colspan="7">no DRAGEN output</td></tr>'}</tbody></table>
-    ${sites ? `<p class="note">Per-site SMN1 estimates (8 sites): ${esc(sites.split(",").join(" · "))}</p>` : ""}</div>`;
   const cv = Object.entries(p.ctyper).map(([ref, r]) => `<tr><td class="l">${ref}</td><td>${esc(r.SMN1)}</td><td>${esc(r.SMN2)}</td><td>${esc(r.SMN_partial)}</td><td>${esc(r.HBA1)}</td><td>${esc(r.HBA2)}</td></tr>`).join("");
   const ctyper = `<div><h3>ctyper gene counts</h3><table><thead><tr><th class="l">reads from</th><th>SMN1</th><th>SMN2</th><th>SMN partial</th><th>HBA1</th><th>HBA2</th></tr></thead><tbody>${cv || '<tr><td class="l" colspan="6">not run</td></tr>'}</tbody></table>
     <p class="note">SMN2 incl. Δ7–8 = SMN2 + partial.</p></div>`;
-  return `<div class="det">${naive}${dragen}${ctyper}</div>`;
+  return `<div class="det">${naive}${ctyper}</div>`;
 }
 function draw() {
   const t = st.t, C = cols(), P = people(), tbl = $("#tbl");
   const groups = []; for (const c of C) { const g = GROUP(c.m); if (groups.length && groups.at(-1).g === g) groups.at(-1).n++; else groups.push({ g, n: 1 }); }
-  const GL = { dragen: "DRAGEN", ctyper: "ctyper (k-mers)", naive: "Naive depth (MAPQ ≥)" };
+  const GL = { ctyper: "ctyper (k-mers)", naive: "Naive depth (MAPQ ≥)" };
   const sortAttr = (k) => st.sort === k ? ` aria-sort="${st.dir > 0 ? "ascending" : "descending"}"` : "";
   let h = `<thead><tr class="grp"><th class="none" colspan="3"></th>${groups.map(({ g, n }) => `<th class="${g}" colspan="${n}">${GL[g]}</th>`).join("")}</tr>
     <tr class="cols"><th class="l" data-k="id"${sortAttr("id")}>Person</th><th class="l" data-k="pop"${sortAttr("pop")}>Pop.</th><th data-k="truth"${sortAttr("truth")}>Truth</th>

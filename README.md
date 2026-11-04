@@ -84,15 +84,21 @@ No Claude Code? `bash scripts/run_all.sh` runs every phase in order (idempotent,
    DRAGEN 4.4.7 multigenome, Locityper LOO).
 4. **Figure 3**: Bayesian caller (depth + PSV allele fraction + population prior), calibration and reliability plot.
 
-## 5. The tool: Dark Dosage Explorer + Bayes caller
+## 5. The tool: Dark Copy Toolbox
 
-- **`reports/explorer/index.html`** — one self-contained page (open it in any browser, no server). Locus browser for
-  SMN1/SMN2, the α-globin cluster and the chr21 false duplication on GRCh38 and CHM13 (MAPQ ≥ 0 vs ≥ 20, population
-  band, paralog-specific sites); per-sample card (assembly truth, DRAGEN 4.0.3/4.2.7/4.4.7, posterior grid); a
-  **caller lab** where the Bayesian caller re-runs in the browser as you move its parameters and is re-scored against
-  truth; and a scoreboard of every method.
-  Rebuild after any table changes: `python scripts/14_export_explorer.py` (page source: `explorer/template.html`).
-- **`caller/bayes_cn.py`** — the same caller on the command line:
+**Benchmark scope:** naive read depth (GRCh38 / CHM13 × MAPQ ≥ 0 / ≥ 20) and ctyper (pangenome k-mers, on GRCh38-
+and CHM13-aligned reads), against HPRC R2 assembly truth, with RAD17 as a single-copy positive control.
+DRAGEN is **not benchmarked** (its SMN/HBA callers are purpose-built for these exact loci); its public calls were
+used only to cross-check the truth (outline §6a). Locityper is labelled "not run" (it maps reads).
+
+- **`docs/index.html`** (built from `explorer/template.html` by `scripts/14_export_explorer.py` + `19_build_site.py`):
+  six steps — the problem, reads on a reference (MAPQ slider, zoom, exon models), the pangenome, one person
+  (truth vs ctyper), compare methods (scoreboard with 95% CIs), and alignment-free genotyping of simulated patients.
+- **`docs/calls.html`** + **`docs/calls/*.tsv`** (`scripts/23_export_calls.py`): every call of every benchmarked
+  method for all 650 people, unrounded naive CN, ctyper gene counts.
+- **`docs/outline.html`** (`explorer/outline.html`): data sources with exact download commands, pipeline, results,
+  problems, and the internal experiments (Bayes v0, DRAGEN).
+- Internal, not in the deliverable: **`caller/bayes_cn.py`**, the Bayes v0 caller on the command line:
   `python caller/bayes_cn.py --ref grch38 --eval` (also `--ref chm13`, `--no-prior`, `--eff-sites`, `--conc`, `--eps`).
 - **`scripts/13_concordance.py`** — every method vs truth on the same targets → `data/tables/concordance.tsv`.
 - **`snakemake -j 4`** reruns everything from P3 on (all steps idempotent).
