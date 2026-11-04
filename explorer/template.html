@@ -143,6 +143,10 @@ h4 { margin: 0 0 4px; font: 650 12px var(--f-body); text-transform: uppercase; l
 .howtruth b { color: var(--ink); }
 .toplinks { font-size: 14px; } .toplinks a { color: var(--accent); }
 .mqctl input[type=range] { width: 200px; }
+.zoombar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+.zoombar button { font: 500 12.5px var(--f-body); border: 1px solid var(--rule); background: var(--surface); color: var(--ink-2); border-radius: 5px; padding: 3px 9px; cursor: pointer; }
+.zoombar button:hover { border-color: var(--accent); color: var(--accent); }
+.zoombar .zl { color: var(--muted); }
 .notrun { border: 1px dashed var(--axis); border-radius: 6px; padding: 10px 12px; font-size: 13.5px; color: var(--ink-2); }
 details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
 .glossary { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0; font-size: 14px; }
@@ -224,6 +228,7 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
         <li><span class="sw band"></span><b>Grey band</b>: the range where 80% of the 650 people fall.</li>
         <li><span class="sw" style="background:var(--psv);height:8px;width:2px"></span><b>Yellow ticks</b>: the few positions where the twins differ.</li>
         <li>Where blue stays near 2 and orange drops to 0, the reads are present but their placement is ambiguous. That's the “dark” part. Hover for exact values.</li>
+        <li><b>Zoom:</b> drag across a plot, or use the SMN1 / SMN2 buttons, for a closer view. Around SMN1 and SMN2 the plot switches to full 1 kb resolution, and you can see the few confident reads clustering at the twin-specific positions near exons 7–8.</li>
         <li><b>Control:</b> at the far left of the SMN view, RAD17 (a normal single-copy gene) sits at 2 with both lines on top of each other. That's what a well-behaved gene looks like.</li></ul></div>
     </div>
     <div class="panel">
@@ -231,6 +236,7 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
         <div class="seg" role="group" aria-label="Region" id="locusSeg"></div>
         <label class="ctl mqctl" for="sMapq"><span class="sw" style="background:var(--mq20)"></span>orange line: reads with MAPQ ≥ <input type="range" id="sMapq" min="0" max="60" step="5" value="20"><b class="mono" id="vMapq">20</b></label>
       </div>
+      <div class="zoombar" id="zoomBar"></div>
       <div class="tracks" id="tracks"></div>
       <div class="sub" id="mqWrap"><h3>Copy number vs MAPQ threshold · <span id="mqWho" class="mono"></span></h3>
         <p class="note">Each line is one gene for the selected person: its copy number when only reads at or above that MAPQ are counted. Unique genes (dashed control) stay flat at 2. Twin genes fall off a cliff as soon as ambiguous reads are excluded. The vertical line is the slider.</p>
@@ -457,87 +463,139 @@ function drawMqCurve() {
       el("text", { x: W - MR + 6, y: l.y + 3.5, style: `fill:${css("--ink-2")}` }, svg).textContent = l.g; }
   }
 }
+function ladderDetail(ref, which, sid) { // detail bins (native 1 kb) at state.mapq; which = "sample" | "q10"/"q50"/"q90"; q0 when mq0=true
+  const Dt = D.ladder?.[ref]?.detail; if (!Dt) return null; const L = D.ladder[ref];
+  const packed = which === "sample" ? Dt.samples[sid] : Dt.band[which]; if (!packed) return null;
+  const u = ladBytes(packed), n = Dt.bins.length;
+  return (q) => { const qi = L.qs.indexOf(+q); if (qi < 0) return null; const o = []; for (let i = 0; i < n; i++) { const v = u[qi * n + i]; o.push(v === 255 ? null : v / 25); } return o; };
+}
+state.zoom = {};
+const ZOOM_GENES = { SMN: ["SMN1", "SMN2", "NAIP"], HBA: ["HBA2", "HBA1"], CHR21_FALSEDUP: ["CBS", "U2AF1"] };
+function zoomControls() {
+  const host = $("#zoomBar"); if (!host) return;
+  const gs = ZOOM_GENES[state.locus] || [];
+  host.innerHTML = `<span class="zl">Zoom:</span>` + gs.map((g) => `<button type="button" data-g="${g}">${g}</button>`).join("") +
+    `<button type="button" data-a="out" title="zoom out">−</button><button type="button" data-a="in" title="zoom in">+</button>` +
+    `<button type="button" data-a="left" title="pan left">←</button><button type="button" data-a="right" title="pan right">→</button>` +
+    `<button type="button" data-a="reset">reset</button><span class="zl note">or drag across a plot · double-click to reset</span>`;
+  host.querySelectorAll("button").forEach((btn) => (btn.onclick = () => {
+    for (const ref of ["grch38", "chm13"]) {
+      const G = D.loci[ref]?.[state.locus]; if (!G) continue; const key = `${ref}|${state.locus}`; const V = virt(G);
+      let [z0, z1] = state.zoom[key] || [0, V.total];
+      if (btn.dataset.g) { const g = G.genes.find((x) => x.name === btn.dataset.g); if (!g) continue; const pad = Math.max(15000, (g.end - g.start) * 0.6);
+        const a = V.v(g.start - pad) ?? V.v(g.start), b = V.v(g.end + pad) ?? V.v(g.end); if (a == null || b == null) continue; [z0, z1] = [a, b]; }
+      else if (btn.dataset.a === "reset") { delete state.zoom[key]; continue; }
+      else { const w = z1 - z0, c = (z0 + z1) / 2;
+        if (btn.dataset.a === "in") [z0, z1] = [c - w / 4, c + w / 4]; if (btn.dataset.a === "out") [z0, z1] = [c - w, c + w];
+        if (btn.dataset.a === "left") [z0, z1] = [z0 - w / 3, z1 - w / 3]; if (btn.dataset.a === "right") [z0, z1] = [z0 + w / 3, z1 + w / 3]; }
+      z0 = Math.max(0, z0); z1 = Math.min(V.total, z1); if (z1 - z0 >= V.total * 0.999) delete state.zoom[key]; else state.zoom[key] = [z0, Math.max(z0 + 2000, z1)];
+    }
+    drawTracks(); }));
+}
+function virt(G) { // concatenated "virtual" coordinate over a locus' windows, with a small gap between windows
+  const wins = G.windows.map((w) => ({ c: w[0], s: w[1], e: w[2] })); const len = wins.reduce((a, w) => a + (w.e - w.s), 0); const gap = wins.length > 1 ? len * 0.03 : 0;
+  const cum = []; let acc = 0; for (const w of wins) { cum.push(acc); acc += (w.e - w.s) + gap; } const total = acc - gap;
+  const wi = (pos) => wins.findIndex((w) => pos >= w.s && pos <= w.e);
+  return { wins, total, wi, v: (pos) => { const i = wi(pos); return i < 0 ? null : cum[i] + (pos - wins[i].s); },
+    inv: (v) => { for (let i = wins.length - 1; i >= 0; i--) if (v >= cum[i]) return [wins[i].c, wins[i].s + Math.min(v - cum[i], wins[i].e - wins[i].s)]; return [wins[0].c, wins[0].s]; } };
+}
 function drawTracks() {
   const host = $("#tracks"); host.innerHTML = "";
-  const notes = [];
   for (const ref of ["grch38", "chm13"]) {
     const P = D.profiles[ref]?.[state.locus]; const G = D.loci[ref]?.[state.locus];
     if (!P || !G) continue;
-    const bins = P.bins;
-    // windows: a locus may have >1 window (chr21 false dup on GRCh38): lay them side by side with a gap
-    const wins = G.windows.map((w) => ({ s: w[1], e: w[2] }));
-    const totalLen = wins.reduce((a, w) => a + (w.e - w.s), 0);
-    const W = 1100, H = 190, ML = 44, MR = 8, MT = 6, gap = wins.length > 1 ? 30 : 0;
-    const plotW = W - ML - MR - gap * (wins.length - 1);
-    const offs = []; let acc = ML;
-    for (const w of wins) { offs.push(acc); acc += (w.e - w.s) / totalLen * plotW + gap; }
-    const X = (pos) => { for (let i = 0; i < wins.length; i++) if (pos >= wins[i].s && pos <= wins[i].e) return offs[i] + (pos - wins[i].s) / totalLen * plotW; return null; };
+    const bins = P.bins, V = virt(G), key = `${ref}|${state.locus}`;
+    const [z0, z1] = state.zoom[key] || [0, V.total], zoomed = !!state.zoom[key];
+    const W = 1100, H = 190, ML = 44, MR = 8, MT = 6, plotW = W - ML - MR;
+    const Xv = (v) => ML + (v - z0) / (z1 - z0) * plotW;
+    const X = (pos) => { const v = V.v(pos); return v == null ? null : Xv(v); };
     const ymax = 6, Y = (v) => MT + (1 - Math.min(v, ymax) / ymax) * (H - MT - 22);
     const title = document.createElement("div"); title.className = "track-title";
-    title.innerHTML = `<b>${REFNAME[ref]}</b><span>${G.windows.map((w) => `${w[0]}:${(w[1] / 1e6).toFixed(3)}–${(w[2] / 1e6).toFixed(3)} Mb`).join("  ·  ")}</span>`;
+    const [c0, p0] = V.inv(z0), [c1, p1] = V.inv(z1);
+    title.innerHTML = `<b>${REFNAME[ref]}</b><span>${zoomed ? `zoomed: ${c0}:${(p0 / 1e6).toFixed(4)}–${(p1 / 1e6).toFixed(4)} Mb · ${((z1 - z0) / 1e3).toFixed(0)} kb` : G.windows.map((w) => `${w[0]}:${(w[1] / 1e6).toFixed(3)}–${(w[2] / 1e6).toFixed(3)} Mb`).join("  ·  ")}</span>`;
     host.appendChild(title);
-    const svg = el("svg", { viewBox: `0 0 ${W} ${H + 46}`, role: "img", "aria-label": `${state.locus} depth on ${REFNAME[ref]}` }, host);
+    const svg = el("svg", { viewBox: `0 0 ${W} ${H + 46}`, role: "img", "aria-label": `${state.locus} depth on ${REFNAME[ref]}`, style: "cursor:crosshair;user-select:none" }, host);
+    const cid = `clip-${ref}`; const defs = el("defs", {}, svg); el("rect", { x: ML, y: 0, width: plotW, height: H + 46 }, el("clipPath", { id: cid }, defs));
     for (const v of [0, 1, 2, 3, 4, 5, 6]) {
       el("line", { x1: ML, x2: W - MR, y1: Y(v), y2: Y(v), stroke: v === 2 ? css("--axis") : css("--rule"), "stroke-width": v === 2 ? 1.2 : 0.7, "stroke-dasharray": v === 2 ? "4 3" : "" }, svg);
       el("text", { x: ML - 8, y: Y(v) + 3.5, "text-anchor": "end" }, svg).textContent = v;
     }
     el("text", { x: 4, y: MT + 8 }, svg).textContent = "CN";
-    // population band
-    const q10 = P.mq["0"].q10, q90 = P.mq["0"].q90;
-    const segs = (arr, fn) => { // split into runs per window
-      const runs = []; let cur = [];
-      bins.forEach((b, i) => { const x = X((b[0] + b[1]) / 2); if (x == null || arr[i] == null) { if (cur.length) runs.push(cur); cur = []; return; }
-        if (cur.length && X(bins[i - 1] ? (bins[i - 1][0] + bins[i - 1][1]) / 2 : 0) != null && Math.abs(x - cur[cur.length - 1][0]) > 40) { runs.push(cur); cur = []; }
-        cur.push([x, i]); });
-      if (cur.length) runs.push(cur); return runs.map(fn);
-    };
-    segs(q10, (run) => {
-      const top = run.map(([x, i]) => `${x.toFixed(1)},${Y(q90[i]).toFixed(1)}`).join(" ");
-      const bot = run.slice().reverse().map(([x, i]) => `${x.toFixed(1)},${Y(q10[i]).toFixed(1)}`).join(" ");
-      el("polygon", { points: `${top} ${bot}`, fill: css("--band"), stroke: "none" }, svg);
-    });
+    const plot = el("g", { "clip-path": `url(#${cid})` }, svg);
+    // detail layer (native 1 kb) when zoomed in on SMN
+    const Dt = D.ladder?.[ref]?.detail, useDetail = Dt && Dt.locus === state.locus && (z1 - z0) < 250000;
+    const dIn = useDetail ? (pos) => Dt.bins.some((b) => pos >= b[0] && pos < b[1]) : () => false;
+    const runs = (binsArr, arr, skip) => { const out = []; let cur = []; let lastW = -1;
+      binsArr.forEach((b, i) => { const mid = (b[0] + b[1]) / 2, w = V.wi(mid), v = arr[i];
+        if (v == null || w < 0 || (skip && skip(mid)) || (cur.length && (w !== lastW || b[0] - binsArr[cur[cur.length - 1]][1] > 1))) { if (cur.length) out.push(cur); cur = []; }
+        if (v != null && w >= 0 && !(skip && skip(mid))) { cur.push(i); lastW = w; } });
+      if (cur.length) out.push(cur); return out; };
+    const line = (binsArr, arr, col, skip) => { for (const r of runs(binsArr, arr, skip)) el("polyline", { points: r.map((i) => `${X((binsArr[i][0] + binsArr[i][1]) / 2).toFixed(1)},${Y(arr[i]).toFixed(1)}`).join(" "), fill: "none", stroke: css(col), "stroke-width": 1.6, "stroke-linejoin": "round" }, plot); };
+    const band = (binsArr, lo, hi, skip) => { for (const r of runs(binsArr, lo, skip)) { if (r.some((i) => hi[i] == null)) continue;
+      const top = r.map((i) => `${X((binsArr[i][0] + binsArr[i][1]) / 2).toFixed(1)},${Y(hi[i]).toFixed(1)}`).join(" "), bot = r.slice().reverse().map((i) => `${X((binsArr[i][0] + binsArr[i][1]) / 2).toFixed(1)},${Y(lo[i]).toFixed(1)}`).join(" ");
+      el("polygon", { points: `${top} ${bot}`, fill: css("--band"), stroke: "none" }, plot); } };
+    band(bins, P.mq["0"].q10, P.mq["0"].q90, useDetail ? dIn : null);
     const lad = ladderLocus(ref, state.locus, D.ladder?.[ref]?.samples?.[state.sample]);
-    for (const [q, col, w] of [["0", "--mq0", 1.6], ["sel", "--mq20", 1.6]]) {
-      const arr = q === "0" ? P.mq["0"]?.samples?.[state.sample] : (lad && lad.length === bins.length ? lad : (+state.mapq === 20 ? P.mq["20"]?.samples?.[state.sample] : null)); if (!arr) continue;
-      segs(arr, (run) => el("polyline", { points: run.map(([x, i]) => `${x.toFixed(1)},${Y(arr[i]).toFixed(1)}`).join(" "), fill: "none", stroke: css(col), "stroke-width": w, "stroke-linejoin": "round" }, svg));
-    }
+    const a0 = P.mq["0"]?.samples?.[state.sample];
+    const aq = lad && lad.length === bins.length ? lad : (+state.mapq === 20 ? P.mq["20"]?.samples?.[state.sample] : null);
+    if (a0) line(bins, a0, "--mq0", useDetail ? dIn : null);
+    if (aq) line(bins, aq, "--mq20", useDetail ? dIn : null);
+    let det = null;
+    if (useDetail) { const fs = ladderDetail(ref, "sample", state.sample), f10 = ladderDetail(ref, "q10"), f90 = ladderDetail(ref, "q90");
+      if (f10 && f90) band(Dt.bins, f10(0), f90(0));
+      if (fs) { det = { q0: fs(0), qs: fs(state.mapq) }; line(Dt.bins, det.q0, "--mq0"); if (det.qs) line(Dt.bins, det.qs, "--mq20"); } }
     // gene track
     const gy = H - 6;
     el("line", { x1: ML, x2: W - MR, y1: gy + 10, y2: gy + 10, stroke: css("--rule") }, svg);
-    for (const p of G.psv) { const x = X(p); if (x != null) el("rect", { x: x - 0.75, y: gy + 2, width: 1.5, height: 16, fill: css("--psv") }, svg); }
+    const gt = el("g", { "clip-path": `url(#${cid})` }, svg);
+    for (const p of G.psv) { const x = X(p); if (x != null && x >= ML && x <= W - MR) el("rect", { x: x - 0.75, y: gy + 2, width: 1.5, height: 16, fill: css("--psv") }, gt); }
     const placed = [];
     for (const g of G.genes) {
-      const x1 = X(g.start), x2 = X(g.end); if (x1 == null || x2 == null) continue;
+      let x1 = X(g.start), x2 = X(g.end); if (x1 == null || x2 == null || x2 < ML || x1 > W - MR) continue;
       const dup = ref === "grch38" && /^(CBSL|U2AF1L5|CRYAA2)$/.test(g.name);
-      el("rect", { x: x1, y: gy + 5, width: Math.max(2, x2 - x1), height: 10, rx: 2, fill: g.anchor ? css("--axis") : dup ? css("--gene-dup") : css("--gene") }, svg);
+      el("rect", { x: x1, y: gy + 5, width: Math.max(2, x2 - x1), height: 10, rx: 2, fill: g.anchor ? css("--axis") : dup ? css("--gene-dup") : css("--gene") }, gt);
+      x1 = Math.max(ML, x1); x2 = Math.min(W - MR, x2);
       let lx = (x1 + x2) / 2, row = 0; while (placed.some((p) => p.row === row && Math.abs(p.x - lx) < 52)) row++;
       placed.push({ x: lx, row });
       const t = el("text", { x: lx, y: gy + 29 + row * 11, "text-anchor": "middle" }, svg); t.textContent = g.name + (g.strand === "-" ? " ←" : " →");
       if (!g.anchor) t.setAttribute("style", `fill:${css("--ink-2")}`);
     }
-    for (let i = 1; i < wins.length; i++) el("text", { x: offs[i] - gap / 2, y: Y(3), "text-anchor": "middle" }, svg).textContent = "//";
-    // hover
-    const hit = el("rect", { x: ML, y: 0, width: W - ML - MR, height: H, fill: "transparent" }, svg);
+    if (!zoomed) for (let i = 1; i < V.wins.length; i++) { const x = X(V.wins[i].s); if (x != null) el("text", { x: x - 10, y: Y(3), "text-anchor": "middle" }, svg).textContent = "//"; }
+    if (useDetail && det) el("text", { x: W - MR - 4, y: MT + 10, "text-anchor": "end" }, svg).textContent = "1 kb resolution";
+    // hover + drag-to-zoom
+    const hit = el("rect", { x: ML, y: 0, width: plotW, height: H, fill: "transparent" }, svg);
     const cross = el("line", { y1: MT, y2: H - 16, stroke: css("--ink-2"), "stroke-width": 0.8, visibility: "hidden" }, svg);
+    const brush = el("rect", { y: MT, height: H - MT - 16, fill: css("--band"), stroke: css("--accent"), "stroke-width": 1, visibility: "hidden" }, svg);
+    const toSvgX = (ev) => { const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()).x; };
+    let drag = null;
+    hit.addEventListener("mousedown", (ev) => { drag = toSvgX(ev); ev.preventDefault(); });
+    hit.addEventListener("mouseup", (ev) => { if (drag == null) return; const x2 = toSvgX(ev), a = Math.min(drag, x2), b = Math.max(drag, x2); drag = null; brush.setAttribute("visibility", "hidden");
+      if (b - a > 6) { const va = z0 + (a - ML) / plotW * (z1 - z0), vb = z0 + (b - ML) / plotW * (z1 - z0); state.zoom[key] = [Math.max(0, va), Math.min(V.total, Math.max(va + 2000, vb))]; drawTracks(); } });
+    hit.addEventListener("dblclick", () => { delete state.zoom[key]; drawTracks(); });
     hit.addEventListener("mousemove", (ev) => {
-      const pt = svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; const p = pt.matrixTransform(svg.getScreenCTM().inverse());
-      let best = -1, bd = 1e9; bins.forEach((b, i) => { const x = X((b[0] + b[1]) / 2); if (x != null && Math.abs(x - p.x) < bd) { bd = Math.abs(x - p.x); best = i; } });
+      const px = toSvgX(ev);
+      if (drag != null) { brush.setAttribute("x", Math.min(drag, px)); brush.setAttribute("width", Math.abs(px - drag)); brush.setAttribute("visibility", "visible"); }
+      const pick = (binsArr) => { let best = -1, bd = 1e9; binsArr.forEach((b, i) => { const x = X((b[0] + b[1]) / 2); if (x != null && Math.abs(x - px) < bd) { bd = Math.abs(x - px); best = i; } }); return [best, bd]; };
+      let src = "coarse", [best, bd] = pick(bins);
+      if (det) { const [bi, dd] = pick(Dt.bins); if (bi >= 0 && dd <= bd) { src = "detail"; best = bi; } }
       if (best < 0) return;
-      const x = X((bins[best][0] + bins[best][1]) / 2); cross.setAttribute("x1", x); cross.setAttribute("x2", x); cross.setAttribute("visibility", "visible");
-      const a0 = P.mq["0"].samples?.[state.sample]?.[best], a20s = lad && lad.length === bins.length ? lad[best] : (+state.mapq === 20 ? P.mq["20"]?.samples?.[state.sample]?.[best] : null), a20 = a20s == null ? null : (+a20s).toFixed(2);
-      const g = G.genes.filter((g) => g.start < bins[best][1] && bins[best][0] < g.end).map((g) => g.name).join(", ");
+      const bb = src === "detail" ? Dt.bins[best] : bins[best];
+      const x = X((bb[0] + bb[1]) / 2); cross.setAttribute("x1", x); cross.setAttribute("x2", x); cross.setAttribute("visibility", "visible");
+      const v0 = src === "detail" ? det.q0[best] : a0?.[best], vq = src === "detail" ? det.qs?.[best] : aq?.[best];
+      const g = G.genes.filter((g) => g.start < bb[1] && bb[0] < g.end).map((g) => g.name).join(", ");
       const tip = $("#tip"); tip.hidden = false;
-      tip.innerHTML = `<div>${G.windows[0][0]}:${bins[best][0].toLocaleString()}–${bins[best][1].toLocaleString()}</div>${g ? `<div class="k">${g}</div>` : ""}` +
-        `<div><span style="color:var(--mq0)">■</span> MAPQ≥0 <b>${a0 ?? "–"}</b></div><div><span style="color:var(--mq20)">■</span> MAPQ≥${state.mapq} <b>${a20 ?? "–"}</b></div>` +
-        `<div class="k">population 10–90%: ${P.mq["0"].q10[best]}–${P.mq["0"].q90[best]}</div>`;
+      tip.innerHTML = `<div>${V.wins[V.wi((bb[0] + bb[1]) / 2)]?.c || ""}:${bb[0].toLocaleString()}–${bb[1].toLocaleString()}</div>${g ? `<div class="k">${g}</div>` : ""}` +
+        `<div><span style="color:var(--mq0)">■</span> MAPQ≥0 <b>${v0 == null ? "–" : (+v0).toFixed(2)}</b></div><div><span style="color:var(--mq20)">■</span> MAPQ≥${state.mapq} <b>${vq == null ? "–" : (+vq).toFixed(2)}</b></div>` +
+        (src === "coarse" ? `<div class="k">population 10–90%: ${P.mq["0"].q10[best]}–${P.mq["0"].q90[best]}</div>` : `<div class="k">1 kb bin</div>`);
       tip.style.left = ev.pageX + (ev.clientX > window.innerWidth - 220 ? -200 : 14) + "px"; tip.style.top = ev.pageY + 12 + "px";
     });
-    hit.addEventListener("mouseleave", () => { $("#tip").hidden = true; cross.setAttribute("visibility", "hidden"); });
+    hit.addEventListener("mouseleave", () => { $("#tip").hidden = true; cross.setAttribute("visibility", "hidden"); drag = null; brush.setAttribute("visibility", "hidden"); });
   }
-  const N = { SMN: "SMN1 and SMN2 are >99.9% identical; most reads land at MAPQ 0 on both references, so unique-read depth (orange) collapses at the genes. Only the ~16 paralog-specific sites (yellow ticks) separate them.",
+  const N = { SMN: "SMN1 and SMN2 are >99.9% identical; most reads land at MAPQ 0 on both references, so unique-read depth (orange) collapses at the genes. Only the ~16 paralog-specific sites (yellow ticks) separate them. Zoom to SMN1 or SMN2 for 1 kb resolution.",
     HBA: "HBA1 and HBA2 differ at a handful of sites; the common −α3.7 deletion removes one copy and fuses the two genes. Watch for samples whose MAPQ≥0 depth sits near 1.5 (3 copies) or 2.5 (5 copies, ααα triplication).",
-    CHR21_FALSEDUP: "GRCh38 carries a false duplication of the CBS/U2AF1/CRYAA region at chr21:6.4 Mb (purple). Reads split between the real and false copy, so each shows ~1 copy at MAPQ 0 on GRCh38. CHM13 has one copy: depth 2, MAPQ intact." };
+    CHR21_FALSEDUP: "GRCh38 carries a false duplication of the CBS/U2AF1/CRYAA region at chr21:6.4 Mb (purple). Reads split between the real and false copy, so each shows ~1 copy at MAPQ 0 on GRCh38. CHM13 has a single locus (one copy per chromosome): CN ≈ 2 and MAPQ intact." };
   $("#locusNote").textContent = N[state.locus];
+  zoomControls();
   drawMqCurve();
 }
 

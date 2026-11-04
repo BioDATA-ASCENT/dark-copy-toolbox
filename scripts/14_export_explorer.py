@@ -23,6 +23,7 @@ from common import log, status
 OUT = os.path.join(REPO_ROOT, "reports", "explorer")
 os.makedirs(OUT, exist_ok=True)
 REBIN = {"SMN": 5, "HBA": 2, "CHR21_FALSEDUP": 2}  # merge this many native bins per displayed bin
+DETAIL_GENES, DETAIL_PAD = ["SMN1", "SMN2"], 40_000  # native-resolution zoom data around these genes
 
 spec = importlib.util.spec_from_file_location("bayes", os.path.join(REPO_ROOT, "caller", "bayes_cn.py"))
 bayes = importlib.util.module_from_spec(spec)
@@ -123,6 +124,17 @@ def main():
                                    samples={samples[i]: pack(disp[i]) for i in keep},
                                    gene_cn={samples[i]: pack(cn[i][:, gidx]) for i in keep})
         log(f"explorer: {ref} MAPQ ladder for {len(keep)} samples × {len(qs)} thresholds")
+        # full-resolution detail (native 1 kb bins) within ±DETAIL_PAD of SMN1/SMN2, all thresholds, for zooming in
+        gb = {l.split("\t")[3]: l.split("\t") for l in open(path("regions", f"{ref}.genes.bed"))}
+        spans = [(int(gb[g][1]) - DETAIL_PAD, int(gb[g][2]) + DETAIL_PAD) for g in DETAIL_GENES if g in gb]
+        didx = sorted([i for i, r in enumerate(regs) if r[4] == "bin" and r[3].startswith("SMN:")
+                       and any(int(r[1]) < e and s0 < int(r[2]) for s0, e in spans)], key=lambda i: int(regs[i][1]))
+        if didx:
+            dcn = cn[:, :, didx]
+            data["ladder"][ref]["detail"] = dict(
+                locus="SMN", bins=[[int(regs[i][1]), int(regs[i][2])] for i in didx],
+                band={nm: pack(np.nanpercentile(dcn, pc, axis=0)) for nm, pc in [("q10", 10), ("q50", 50), ("q90", 90)]},
+                samples={samples[i]: pack(dcn[i]) for i in keep})
 
     # ---- caller sufficient statistics (mirrors bayes.posterior)
     for ref in ["grch38", "chm13"]:
