@@ -111,5 +111,6 @@ dragen_buckets:
   v4_0_3: s3://1000genomes-dragen-v4.0.3/
   v4_2_7: s3://1000genomes-dragen-v4-2-7/
   v4_4_7: s3://1000genomes-dragen-v4-4-7/
-dragen_file_patterns: [smn, hba, targeted, cyp2d6, gba, coverage_metrics, mapping_metrics]
+dragen_file_patterns: ['\.smn\.tsv', hba, targeted, '\.cnv_metrics', ploidy_estimation_metrics, '\.wgs_coverage_metrics']   # regexes (grep -E)
+dragen_exclude_pattern: '/hla/|_hla/'
 dragen_max_file_mb: 200

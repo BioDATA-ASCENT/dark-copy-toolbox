@@ -44,21 +44,39 @@ def region_bed(ref):
 
 
 def depth_one(args):
-    ref, sample, slice_fn, bed = args
-    out = []
-    for q in MAPQS:
-        p = subprocess.run(["samtools", "bedcov", "-Q", str(q), "--reference", REF_FA[ref], bed, slice_fn],
-                           capture_output=True, text=True)
+    """Depth at 3 MAPQ thresholds + PSV counts for one slice.
+
+    The CRAM slice is first decoded once into a temporary uncompressed BAM: samtools bedcov / pysam fetches
+    on CRAM re-decode a whole container per region (~3 min per slice for ~4k regions), on BAM it is ~1 s.
+    """
+    ref, sample, slice_fn, bed, sites = args
+    import tempfile
+    tmpd = tempfile.mkdtemp(dir=TB, prefix=".tmp_")
+    bam = os.path.join(tmpd, "s.bam")
+    try:
+        p = subprocess.run(["samtools", "view", "-u", "-T", REF_FA[ref], "-o", bam, slice_fn], capture_output=True, text=True)
+        if p.returncode == 0:
+            p = subprocess.run(["samtools", "index", bam], capture_output=True, text=True)
         if p.returncode:
-            return sample, None, p.stderr[-500:]
-        rows = [l.split("\t") for l in p.stdout.splitlines()]
-        means = [(r[0], int(r[1]), int(r[2]), r[3], r[4], int(r[5]) / max(1, int(r[2]) - int(r[1]))) for r in rows]
-        ctrl = [m[5] for m in means if m[4] == "control"]
-        med = statistics.median(ctrl) if ctrl else float("nan")
-        for c, s, e, rid, kind, mean in means:
-            out.append((sample, ref, rid, kind, c, s, e, q, round(mean, 3), round(2 * mean / med, 4) if med else "nan"))
-        out.append(("__ctrl__", sample, ref, q, round(med, 3)))
-    return sample, out, ""
+            return sample, None, None, p.stderr[-500:]
+        out = []
+        for q in MAPQS:
+            p = subprocess.run(["samtools", "bedcov", "-Q", str(q), bed, bam], capture_output=True, text=True)
+            if p.returncode:
+                return sample, None, None, p.stderr[-500:]
+            rows = [l.split("\t") for l in p.stdout.splitlines()]
+            means = [(r[0], int(r[1]), int(r[2]), r[3], r[4], int(r[5]) / max(1, int(r[2]) - int(r[1]))) for r in rows]
+            ctrl = [m[5] for m in means if m[4] == "control"]
+            med = statistics.median(ctrl) if ctrl else float("nan")
+            for c, s, e, rid, kind, mean in means:
+                out.append((sample, ref, rid, kind, c, s, e, q, round(mean, 3), round(2 * mean / med, 4) if med else "nan"))
+            out.append(("__ctrl__", sample, ref, q, round(med, 3)))
+        psv = psv_one((ref, sample, bam, sites))
+        return sample, out, psv, ""
+    finally:
+        for f in os.listdir(tmpd):
+            os.unlink(os.path.join(tmpd, f))
+        os.rmdir(tmpd)
 
 
 def psv_one(args):
@@ -84,11 +102,14 @@ def main():
     for ref in refs:
         bed = region_bed(ref)
         slices = sorted(f for f in os.listdir(os.path.join(S, ref)) if f.endswith(f".{EXT}") and os.path.exists(os.path.join(S, ref, f + ".ok")))
-        jobs = [(ref, f.split(".")[0], os.path.join(S, ref, f), bed) for f in slices]
+        sites = list(csv.DictReader(open(os.path.join(G, f"{ref}.psv.tsv")), delimiter="\t"))
+        jobs = [(ref, f.split(".")[0], os.path.join(S, ref, f), bed, sites) for f in slices]
         log(f"P9 {ref}: {len(jobs)} slices")
-        with Pool(CFG["threads"]) as pool, gzip.open(os.path.join(TB, f"depth.{ref}.tsv.gz"), "wt") as fh:
+        with Pool(CFG["threads"]) as pool, gzip.open(os.path.join(TB, f"depth.{ref}.tsv.gz"), "wt") as fh, \
+                gzip.open(os.path.join(TB, f"psv_counts.{ref}.tsv.gz"), "wt") as fp:
             fh.write("sample\tref\tid\tkind\tchrom\tstart\tend\tmin_mapq\tmean_depth\tnorm_cn\n")
-            for sample, rows, err in pool.imap_unordered(depth_one, jobs):
+            fp.write("sample\tref\tfamily\tsite_id\tcopy\tchrom\tpos\tfwd_base_A\tfwd_base_B\tnA\tnC\tnG\tnT\tn_baseA\tn_baseB\tdepth\n")
+            for i, (sample, rows, psv, err) in enumerate(pool.imap_unordered(depth_one, jobs), 1):
                 if rows is None:
                     log(f"depth failed {sample} {ref}: {err}")
                     continue
@@ -97,13 +118,10 @@ def main():
                         ctrl_rows.append(r[1:])
                     else:
                         fh.write("\t".join(map(str, r)) + "\n")
-        sites = list(csv.DictReader(open(os.path.join(G, f"{ref}.psv.tsv")), delimiter="\t"))
-        pj = [(ref, s, fn, sites) for ref_, s, fn, _ in jobs]
-        with Pool(CFG["threads"]) as pool, gzip.open(os.path.join(TB, f"psv_counts.{ref}.tsv.gz"), "wt") as fh:
-            fh.write("sample\tref\tfamily\tsite_id\tcopy\tchrom\tpos\tfwd_base_A\tfwd_base_B\tnA\tnC\tnG\tnT\tn_baseA\tn_baseB\tdepth\n")
-            for rows in pool.imap_unordered(psv_one, pj):
-                for r in rows:
-                    fh.write("\t".join(map(str, r)) + "\n")
+                for r in psv:
+                    fp.write("\t".join(map(str, r)) + "\n")
+                if i % 50 == 0:
+                    log(f"P9 {ref}: {i}/{len(jobs)}")
     with open(os.path.join(TB, "control_depth.tsv"), "w") as fh:
         fh.write("sample\tref\tmin_mapq\tcontrol_median_depth\n")
         for r in sorted(ctrl_rows):

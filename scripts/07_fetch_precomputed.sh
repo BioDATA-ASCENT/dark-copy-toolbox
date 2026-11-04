@@ -47,9 +47,16 @@ for key in v4_0_3 v4_2_7 v4_4_7; do
   if [[ -s "$sel" ]]; then
     awk -F'\t' 'NR>1{print $2}' "$sel" > "$d/samples.txt"
     zcat "$d/listing.txt.gz" | grep -F -f "$d/samples.txt" | grep -iE "$pat" \
+      | grep -vE "$(cfg dragen_exclude_pattern)" \
       | awk -v m="$maxb" '$3<=m{print $4}' > "$d/wanted_keys.txt" || true
     log "DRAGEN $key: $(wc -l < "$d/wanted_keys.txt") files for selected samples"
-    while read -r k; do fetch "${b}${k}" "$d/files/$k" || true; done < "$d/wanted_keys.txt"
+    # parallel anonymous HTTPS fetches (aws-cli start-up made serial s3 cp ~13 s/file); skips files on disk
+    # path-style URL in the bucket's own region (bucket names with dots break virtual-host TLS)
+    bk="${b#s3://}"; bk="${bk%/}"
+    rg="$(curl -sI "https://s3.amazonaws.com/$bk/" | tr -d '\r' | awk -F': ' 'tolower($1)=="x-amz-bucket-region"{print $2}')"
+    bh="https://s3.${rg:-us-east-1}.amazonaws.com/$bk/"; mkdir -p "$d/files"
+    grep -v -x -F -f <(cd "$d/files" && find . -type f -size +0 | sed 's#^\./##'; echo __none__) "$d/wanted_keys.txt" \
+      | xargs -r -P 16 -I{} sh -c 'mkdir -p "$(dirname "$2/{}")" && curl -fsS --retry 3 -o "$2/{}" "$1{}" || echo "FAILED {}"' _ "$bh" "$d/files" || true
   fi
 done
 

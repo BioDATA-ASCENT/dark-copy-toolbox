@@ -18,3 +18,6 @@
 | 2026-11-04 03:51 | P6_slices | DONE | grch38 2, chm13 2 slices; 0 non-OK attempts (logs/slices.tsv) |
 | 2026-11-04 03:51 | P3_manifest | DONE | 3202 1kGP samples; selected 650 (223 truth, 242 parents) |
 | 2026-11-04 03:52 | P6_slices | START | refs=grch38 chm13 limit=0 jobs=8 |
+| 2026-11-04 03:55 | P7_precomputed | START |  |
+| 2026-11-04 03:56 | P7_precomputed | START |  |
+| 2026-11-04 04:16 | P9_tables | DONE | 293 sample×ref depth tables; median control depth 35.819x |
