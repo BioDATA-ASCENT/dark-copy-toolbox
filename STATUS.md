@@ -66,3 +66,8 @@
 | 2026-11-04 16:49 | S6_explorer | DONE | reports/explorer/data.json (11.9 MB) |
 | 2026-11-04 16:50 | S6_explorer | DONE | reports/explorer/data.json (11.9 MB) |
 | 2026-11-04 16:50 | S9_site | DONE | docs/index.html + docs/outline.html |
+| 2026-11-04 17:03 | S12_exons | DONE | data/regions/{grch38,chm13}.exons.tsv |
+| 2026-11-04 17:04 | S12_exons | DONE | data/regions/{grch38,chm13}.exons.tsv |
+| 2026-11-04 17:06 | S6_explorer | DONE | reports/explorer/data.json (11.9 MB) |
+| 2026-11-04 17:07 | S6_explorer | DONE | reports/explorer/data.json (11.9 MB) |
+| 2026-11-04 17:07 | S9_site | DONE | docs/index.html + docs/outline.html |

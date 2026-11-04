@@ -59,6 +59,16 @@ def main():
             c, s, e, n, locus, strand = l.rstrip("\n").split("\t")
             genes[locus.replace("_anchor", "")].append(dict(name=n, chrom=c, start=int(s), end=int(e), strand=strand,
                                                              anchor=locus.endswith("_anchor")))
+        exons = defaultdict(lambda: dict(exons=[], cds=None, tx=None))
+        for r in tsv(path("regions", f"{ref}.exons.tsv")):
+            e = exons[r["gene"]]; e["tx"] = r["transcript"]
+            e["exons"].append([int(r["start"]), int(r["end"]), r["exon_label"]])
+            if r["cds_start"]:
+                e["cds"] = [int(r["cds_start"]), int(r["cds_end"])]
+        for lst in genes.values():
+            for g in lst:
+                if g["name"] in exons:
+                    g.update(exons[g["name"]])
         psv = defaultdict(list)
         for r in tsv(path("regions", f"{ref}.psv.tsv")):
             psv[r["family"]].append(int(r["pos"]))

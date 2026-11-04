@@ -227,6 +227,7 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
         <li><span class="sw" style="background:var(--mq20)"></span><b>Orange</b>: only reads at or above the MAPQ you pick with the slider (default 20 = confidently placed). Slide it from 0 to 60 and watch where the reads disappear.</li>
         <li><span class="sw band"></span><b>Grey band</b>: the range where 80% of the 650 people fall.</li>
         <li><span class="sw" style="background:var(--psv);height:8px;width:2px"></span><b>Yellow ticks</b>: the few positions where the twins differ.</li>
+        <li><b>Gene models</b> (bottom): thick boxes are coding exons, thin boxes UTRs, lines introns (canonical transcripts: GENCODE on GRCh38, the matching RefSeq transcript on CHM13). Exon numbers appear when you zoom below 150 kb; SMN exons use the clinical names 1, 2a, 2b, 3–8.</li>
         <li>Where blue stays near 2 and orange drops to 0, the reads are present but their placement is ambiguous. That's the “dark” part. Hover for exact values.</li>
         <li><b>Zoom:</b> drag across a plot, or use the SMN1 / SMN2 buttons, for a closer view. Around SMN1 and SMN2 the plot switches to full 1 kb resolution, and you can see the few confident reads clustering at the twin-specific positions near exons 7–8.</li>
         <li><b>Control:</b> at the far left of the SMN view, RAD17 (a normal single-copy gene) sits at 2 with both lines on top of each other. That's what a well-behaved gene looks like.</li></ul></div>
@@ -550,10 +551,26 @@ function drawTracks() {
     const gt = el("g", { "clip-path": `url(#${cid})` }, svg);
     for (const p of G.psv) { const x = X(p); if (x != null && x >= ML && x <= W - MR) el("rect", { x: x - 0.75, y: gy + 2, width: 1.5, height: 16, fill: css("--psv") }, gt); }
     const placed = [];
+    const span = z1 - z0, showNums = span < 150000;
     for (const g of G.genes) {
       let x1 = X(g.start), x2 = X(g.end); if (x1 == null || x2 == null || x2 < ML || x1 > W - MR) continue;
       const dup = ref === "grch38" && /^(CBSL|U2AF1L5|CRYAA2)$/.test(g.name);
-      el("rect", { x: x1, y: gy + 5, width: Math.max(2, x2 - x1), height: 10, rx: 2, fill: g.anchor ? css("--axis") : dup ? css("--gene-dup") : css("--gene") }, gt);
+      const fill = g.anchor ? css("--axis") : dup ? css("--gene-dup") : css("--gene");
+      if (g.exons?.length && (x2 - x1) > 25) {
+        // gene model: intron line, exons (UTR half height, CDS full height), exon labels when zoomed in
+        el("line", { x1, x2, y1: gy + 10, y2: gy + 10, stroke: fill, "stroke-width": 1.2 }, gt);
+        const cds = g.cds; let lastLab = -1e9;
+        for (const [s0, e0, lab] of g.exons) {
+          const a = X(s0), b = X(e0); if (a == null || b == null) continue;
+          el("rect", { x: a, y: gy + 7, width: Math.max(1.2, b - a), height: 6, fill }, gt);
+          if (cds) { const cs = Math.max(s0, cds[0]), ce = Math.min(e0, cds[1]); if (ce > cs) { const ca = X(cs), cb = X(ce); el("rect", { x: ca, y: gy + 4, width: Math.max(1.2, cb - ca), height: 12, fill }, gt); } }
+          if (showNums && (a + b) / 2 - lastLab > 6 + 5 * lab.length) { lastLab = (a + b) / 2; const t = el("text", { x: lastLab, y: gy + 1, "text-anchor": "middle", style: `font-size:9px;fill:${css("--ink-2")}` }, gt); t.textContent = lab; }
+          const hitE = el("rect", { x: a - 2, y: gy + 2, width: Math.max(4, b - a + 4), height: 16, fill: "transparent" }, gt);
+          el("title", {}, hitE).textContent = `${g.name} exon ${lab} · ${(e0 - s0)} bp · ${g.tx || ""}`;
+        }
+      } else {
+        el("rect", { x: x1, y: gy + 5, width: Math.max(2, x2 - x1), height: 10, rx: 2, fill }, gt);
+      }
       x1 = Math.max(ML, x1); x2 = Math.min(W - MR, x2);
       let lx = (x1 + x2) / 2, row = 0; while (placed.some((p) => p.row === row && Math.abs(p.x - lx) < 52)) row++;
       placed.push({ x: lx, row });
@@ -582,7 +599,9 @@ function drawTracks() {
       const bb = src === "detail" ? Dt.bins[best] : bins[best];
       const x = X((bb[0] + bb[1]) / 2); cross.setAttribute("x1", x); cross.setAttribute("x2", x); cross.setAttribute("visibility", "visible");
       const v0 = src === "detail" ? det.q0[best] : a0?.[best], vq = src === "detail" ? det.qs?.[best] : aq?.[best];
-      const g = G.genes.filter((g) => g.start < bb[1] && bb[0] < g.end).map((g) => g.name).join(", ");
+      const mid = (bb[0] + bb[1]) / 2;
+      const g = G.genes.filter((g) => g.start < bb[1] && bb[0] < g.end).map((g) => { const ex = (g.exons || []).filter(([a, b]) => a < bb[1] && bb[0] < b).map((e) => e[2]);
+        return g.name + (ex.length ? ` · exon ${ex.join(", ")}` : g.exons?.length ? " · intron" : ""); }).join("; ");
       const tip = $("#tip"); tip.hidden = false;
       tip.innerHTML = `<div>${V.wins[V.wi((bb[0] + bb[1]) / 2)]?.c || ""}:${bb[0].toLocaleString()}–${bb[1].toLocaleString()}</div>${g ? `<div class="k">${g}</div>` : ""}` +
         `<div><span style="color:var(--mq0)">■</span> MAPQ≥0 <b>${v0 == null ? "–" : (+v0).toFixed(2)}</b></div><div><span style="color:var(--mq20)">■</span> MAPQ≥${state.mapq} <b>${vq == null ? "–" : (+vq).toFixed(2)}</b></div>` +
