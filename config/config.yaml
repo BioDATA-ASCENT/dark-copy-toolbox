@@ -130,3 +130,7 @@ ctyper:
   read_length: 150        # 1kGP NYGC 2x150; 31-mer depth = read depth * (L-30)/L
   threads_per_job: 1
   jobs: 16
+
+# Positive control: a unique single-copy gene inside the SMN slice (left anchor). Truth = annotated copies per
+# assembly haplotype (CAT), summed over both haplotypes. Plain read depth should get it right.
+control_gene: RAD17

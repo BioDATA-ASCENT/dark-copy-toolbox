@@ -21,7 +21,7 @@ import os
 import re
 from collections import defaultdict
 
-from cfg import path
+from cfg import CFG, path
 from common import log, status
 
 TB = path("tables")
@@ -51,6 +51,17 @@ def main():
         if r["usable_HBA"] == "True":
             t["HBA_total"] = int(r["HBA_total"])
         truth[r["sample"]] = t
+    # positive control: copies of a unique gene annotated (CAT) on each haplotype, summed when both haplotypes exist
+    CTRL = CFG.get("control_gene")
+    if CTRL:
+        per = defaultdict(list)
+        for r in tsv(path("truth", "haplotypes.tsv")):
+            fn = path("truth", "cat", f"{r['assembly']}.genes.tsv")
+            if os.path.exists(fn):
+                per[r["sample"]].append(sum(l.split("\t")[4] == CTRL for l in open(fn)))
+        for smp, v in per.items():
+            if len(v) == 2:
+                truth.setdefault(smp, {})[f"CONTROL_{CTRL}"] = sum(v)
     calls = defaultdict(dict)  # (sample, method) -> {target: call}
 
     for ref in ["grch38", "chm13"]:
@@ -59,7 +70,7 @@ def main():
             continue
         g = defaultdict(dict)
         for r in tsv(fn):
-            if r["kind"] == "gene" and r["id"] in ("SMN1", "SMN2", "HBA1", "HBA2") and r["min_mapq"] in ("0", "20"):
+            if r["kind"] == "gene" and r["id"] in ("SMN1", "SMN2", "HBA1", "HBA2", CTRL) and r["min_mapq"] in ("0", "20"):
                 g[(r["sample"], r["min_mapq"])][r["id"]] = float(r["norm_cn"])
         for (s, q), d in g.items():
             c = {k: round(v) for k, v in d.items()}
@@ -68,6 +79,8 @@ def main():
                 out.update(SMN1=c["SMN1"], SMN2_all=c["SMN2"], SMN_total=c["SMN1"] + c["SMN2"])
             if "HBA1" in c and "HBA2" in c:
                 out["HBA_total"] = c["HBA1"] + c["HBA2"]
+            if CTRL and CTRL in c:
+                out[f"CONTROL_{CTRL}"] = c[CTRL]
             calls[(s, f"naive_{ref}_mq{q}")] = out
 
     if os.path.exists(path("tables", "dragen_calls.tsv")):

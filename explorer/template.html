@@ -141,6 +141,7 @@ h4 { margin: 0 0 4px; font: 650 12px var(--f-body); text-transform: uppercase; l
 .howtruth summary { cursor: pointer; color: var(--ink); font-size: 15px; }
 .howtruth ol { margin: 10px 0; padding-left: 20px; display: grid; gap: 6px; max-width: 100ch; }
 .howtruth b { color: var(--ink); }
+.toplinks { font-size: 14px; } .toplinks a { color: var(--accent); }
 .notrun { border: 1px dashed var(--axis); border-radius: 6px; padding: 10px 12px; font-size: 13.5px; color: var(--ink-2); }
 details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
 .glossary { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0; font-size: 14px; }
@@ -156,6 +157,7 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
     <h1>Dark Copy Toolbox</h1>
     <p class="lede">Some medically important genes have near-identical twins elsewhere in the genome, so standard pipelines can't tell how many copies a person has. This toolbox walks through the problem in six steps, from <em>why these genes are hard</em> to <em>which method counts them correctly</em>, using 650 people from 1000 Genomes and copy numbers read directly off their HPRC genome assemblies.</p>
     <div class="facts" id="facts"></div>
+    <p class="toplinks"><a href="https://jacgonisa.github.io/dark-copy-toolbox/outline.html">How we built this: project outline →</a> · <a href="https://github.com/jacgonisa/dark-copy-toolbox">code on GitHub</a></p>
   </header>
 
   <nav class="stepnav" aria-label="Steps">
@@ -207,7 +209,8 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
         <li><span class="sw" style="background:var(--mq20)"></span><b>Orange</b>: only reads the aligner places confidently (MAPQ ≥ 20).</li>
         <li><span class="sw band"></span><b>Grey band</b>: the range where 80% of the 650 people fall.</li>
         <li><span class="sw" style="background:var(--psv);height:8px;width:2px"></span><b>Yellow ticks</b>: the few positions where the twins differ.</li>
-        <li>Where blue stays near 2 and orange drops to 0, the reads are present but their placement is ambiguous. That's the “dark” part. Hover for exact values.</li></ul></div>
+        <li>Where blue stays near 2 and orange drops to 0, the reads are present but their placement is ambiguous. That's the “dark” part. Hover for exact values.</li>
+        <li><b>Control:</b> at the far left of the SMN view, RAD17 (a normal single-copy gene) sits at 2 with both lines on top of each other. That's what a well-behaved gene looks like.</li></ul></div>
     </div>
     <div class="panel">
       <div class="controls">
@@ -216,7 +219,7 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
       <div class="tracks" id="tracks"></div>
       <p class="note" id="locusNote"></p>
     </div>
-    <div class="takeaway"><b>Key message</b> Over SMN1/SMN2, confident reads disappear on <em>both</em> references, because the twins are real. On chr21, GRCh38 contains a fake extra copy of CBS/U2AF1/CRYAA, so reads split between the two and CBS looks lost. CHM13 removes the fake copy and the genes come back at 2.</div>
+    <div class="takeaway"><b>Key message</b> At the control gene RAD17 both lines sit at 2. Over SMN1/SMN2, confident reads disappear on <em>both</em> references, because the twins are real. On chr21, GRCh38 contains a fake extra copy of CBS/U2AF1/CRYAA, so reads split between the two and CBS looks lost. CHM13 removes the fake copy and the genes come back at 2.</div>
   </section>
 
   <!-- ============================================================ STEP 3 -->
@@ -297,6 +300,7 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
       <div><h4>How to read it</h4><ul>
         <li><b>Whiskers</b>: 95% confidence interval. With ~200 people, overlapping whiskers mean “not clearly different”.</li>
         <li><b>Dashed line</b>: the score from always guessing the most common value. A method below it is worse than guessing.</li>
+        <li><b>Control: RAD17</b>: a unique gene every method should get right. It checks the data, not the methods.</li>
         <li><b>Atypical people only</b>: drops everyone with the common value (SMN1 = 2, α-globin = 4). This is where the clinically interesting cases are, and guessing scores 0%.</li></ul></div>
     </div>
     <div class="panel">
@@ -511,6 +515,7 @@ function truthOf(s) {
   const o = {};
   if (t.usable_SMN === "True") { o.SMN1 = +t.SMN1; o.SMN2_all = +t.SMN2 + +t["SMN_del7-8"]; o.SMN_total = o.SMN1 + o.SMN2_all + +t["SMN?"]; }
   if (t.usable_HBA === "True") o.HBA_total = +t.HBA_total;
+  const ck = D.control?.truth?.[s]; if (ck != null) o[`CONTROL_${D.control.gene}`] = ck;
   return o;
 }
 let LAST = null;
@@ -581,7 +586,7 @@ function drawScore() {
     return { n, ok, over, under }; };
   const rows = [];
   for (const [m, byT] of Object.entries(D.calls || {})) { const c = byT[tgt]; if (!c) continue; const r = score(c); if (r.n) rows.push({ m: MLAB(m), ...r }); }
-  if (LAST) { const c = {}; for (const [sid, r] of Object.entries(LAST)) { const fam = tgt === "HBA_total" ? "HBA" : "SMN"; const x = r[fam]; if (!x) continue;
+  if (LAST && !tgt.startsWith("CONTROL_")) { const c = {}; for (const [sid, r] of Object.entries(LAST)) { const fam = tgt === "HBA_total" ? "HBA" : "SMN"; const x = r[fam]; if (!x) continue;
       c[sid] = tgt === "SMN1" ? x.A : tgt === "SMN2_all" ? x.B : x.total; }
     const r = score(c); if (r.n) rows.push({ m: `Bayes v0 · ${REFNAME[state.ref]} · live settings (step 5)`, ...r, live: true }); }
   const nAll = Object.keys(truthBy).filter(keep).length;
@@ -590,6 +595,7 @@ function drawScore() {
   const host = $("#score"); host.innerHTML = "";
   const head = document.createElement("p"); head.className = "note";
   head.innerHTML = `${nAll} people with assembly truth${state.subset === "all" ? "" : ` whose ${TLAB[tgt]} is <b>not</b> ${common}`}. Most common value: <b>${common}</b> (${cnt[common]} of ${Object.keys(truthBy).length} people).`;
+  if (tgt.startsWith("CONTROL_")) head.innerHTML += ` <b>Positive control:</b> ${D.control.gene} is a unique, single-copy gene next to the SMN block (one copy on every one of the 446 assembled haplotypes). Plain read depth should get it right, and it does, even with confident reads only. So the failures at SMN come from the twins, not from the data or the pipeline. The specialised callers don't report this gene.`;
   host.appendChild(head);
   const W = 1100, rowH = 26, M = 330, H = rows.length * rowH + 40; const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `accuracy for ${tgt}` }, host);
   const X = (v) => M + v * (W - M - 150);
@@ -613,11 +619,13 @@ function drawScore() {
     rows.map((r) => { const [lo, hi] = wilson(r.ok, r.n); return `<tr><td>${r.m}</td><td class="num">${r.n}</td><td class="num">${r.ok}</td><td class="num">${(100 * r.ok / r.n).toFixed(1)}</td><td class="num">${(100 * lo).toFixed(1)}–${(100 * hi).toFixed(1)}</td><td class="num">${r.over}</td><td class="num">${r.under}</td></tr>`; }).join("") + "</tbody></table>";
 }
 const TLAB = { SMN1: "SMN1 copy number", SMN2_all: "SMN2 copy number", SMN_total: "SMN1+SMN2 total", HBA_total: "α-globin gene total" };
+if (D.control?.gene) TLAB[`CONTROL_${D.control.gene}`] = `${D.control.gene} copy number`;
 // ---------------------------------------------------------------- step 1 cards, step 4 shortcuts, step nav
 function locusCards() {
   const info = [
     ["SMN", "SMN1 / SMN2", "chr5q13 · spinal muscular atrophy", "Losing both SMN1 copies causes SMA, and 1 copy makes you a carrier (≈1 in 50 people). SMN2 copy number changes how severe SMA is. The twins differ at ~16 positions, and the c.840 letter decides which is which."],
     ["HBA", "HBA1 / HBA2 (α-globin)", "chr16p13.3 · α-thalassemia", "Deletions such as −α3.7 merge the two genes into one and are common in African, South and Southeast Asian ancestry. Losing 2–4 of the 4 copies causes α-thalassemia."],
+    ["SMN", "RAD17 (control)", "chr5q13 · positive control", "A plain single-copy gene just left of the SMN block, with exactly one copy on every assembled haplotype. Read depth gets it right for everyone. It's the yardstick that shows the method works when there's no twin. In step 2 it's the flat stretch at the far left of the SMN view."],
     ["CHR21_FALSEDUP", "CBS · U2AF1 · CRYAA", "chr21 · a reference error", "GRCh38 accidentally contains a second, fake copy of these genes near the centromere. Reads split between the real and fake copies, so the real genes look lost. T2T-CHM13 fixes this."],
   ];
   $("#locusCards").innerHTML = info.map(([k, t, tag, txt]) => `<div class="lcard"><b>${t}</b><span class="tag">${tag}</span><p>${txt}</p><button type="button" data-locus="${k}">Show the reads (step 2) →</button></div>`).join("");
@@ -739,7 +747,7 @@ function drawPangraph() {
 facts();
 segButtons("#locusSeg", LOCI, "locus", drawTracks);
 segButtons("#refSeg", Object.keys(D.caller).map((r) => [r, REFNAME[r]]), "ref", runLab);
-segButtons("#tgtSeg", [["SMN1", "SMN1"], ["SMN2_all", "SMN2 incl. Δ7-8"], ["SMN_total", "SMN total"], ["HBA_total", "α-globin total"]], "target", drawScore);
+segButtons("#tgtSeg", [["SMN1", "SMN1"], ["SMN2_all", "SMN2 incl. Δ7-8"], ["SMN_total", "SMN total"], ["HBA_total", "α-globin total"]].concat(D.control?.gene ? [[`CONTROL_${D.control.gene}`, `Control: ${D.control.gene}`]] : []), "target", drawScore);
 segButtons("#subSeg", [["all", "All people"], ["atypical", "Atypical people only"]], "subset", drawScore);
 locusCards(); shortcuts(); stepNav();
 fillSamples();

@@ -1,4 +1,8 @@
-# dark-dosage
+# Dark Copy Toolbox (dark-dosage)
+
+**Live site:** [the toolbox](https://jacgonisa.github.io/dark-copy-toolbox/) (interactive, step by step) ·
+[project outline](https://jacgonisa.github.io/dark-copy-toolbox/outline.html) (what we downloaded, how we processed it, results, problems).
+Both pages are static files in [`docs/`](docs/), built by `scripts/14_export_explorer.py` + `scripts/19_build_site.py`.
 
 **Does a T2T or pangenome reference fix copy-number calling in segmental duplications?**
 BioDATA ASCENT code-a-thon, CSHL, 4 Nov 2026.

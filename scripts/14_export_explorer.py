@@ -17,7 +17,7 @@ from collections import defaultdict
 
 import numpy as np
 
-from cfg import REPO_ROOT, path
+from cfg import CFG, REPO_ROOT, path
 from common import log, status
 
 OUT = os.path.join(REPO_ROOT, "reports", "explorer")
@@ -139,6 +139,12 @@ def main():
         if r["truth"] != "":
             calls[r["method"]][r["target"]][r["sample"]] = int(r["call"])
     data["calls"] = calls
+    ctrl = CFG.get("control_gene")
+    ct = {}
+    for r in tsv(path("tables", "calls_long.tsv")):
+        if r["target"] == f"CONTROL_{ctrl}" and r["truth"] != "":
+            ct[r["sample"]] = int(r["truth"])
+    data["control"] = {"gene": ctrl, "truth": ct}
     pg = os.path.join(OUT, "pangraph.json")
     data["pangraph"] = json.load(open(pg)) if os.path.exists(pg) else {}
     data["meta"] = dict(n_selected=len(sel), n_truth=len(truth), refs=list(data["caller"].keys()),
