@@ -3,7 +3,8 @@
 
 Targets (diploid integers):  SMN1 · SMN2_all (= full-length SMN2 + SMN2Δ7-8) · SMN_total · HBA_total
 Methods:
-  naive_{ref}_mq{0,20}  round(norm_cn) per gene from data/tables/depth.{ref}.tsv.gz (no calibration at all)
+  naive_{ref}_mq{0,20}  round(norm_cn) per gene from data/tables/depth.{ref}.tsv.gz (no calibration at all);
+                        totals = round(sum of the twins' unrounded CN)
   dragen_{4.0.3,4.2.7,4.4.7}   data/tables/dragen_calls.tsv (SMN2_all = SMN2_CN + SMN2_del78_CN; 4.0.3 has no HBA)
   bayes_{tag}           caller/bayes_cn.py outputs in data/tables/bayes_cn.*.tsv
   ctyper_{ref}          ctyper 1.0.5 run on our slices (scripts/18_ctyper_run.py)
@@ -75,10 +76,12 @@ def main():
         for (s, q), d in g.items():
             c = {k: round(v) for k, v in d.items()}
             out = {}
+            # totals: add the twins' depth first, then round once. Rounding each twin first (2.5 + 2.5 -> 3 + 3)
+            # over-called the total; reads are split at random between twins, but their sum counts every copy.
             if "SMN1" in c and "SMN2" in c:
-                out.update(SMN1=c["SMN1"], SMN2_all=c["SMN2"], SMN_total=c["SMN1"] + c["SMN2"])
+                out.update(SMN1=c["SMN1"], SMN2_all=c["SMN2"], SMN_total=round(d["SMN1"] + d["SMN2"]))
             if "HBA1" in c and "HBA2" in c:
-                out["HBA_total"] = c["HBA1"] + c["HBA2"]
+                out["HBA_total"] = round(d["HBA1"] + d["HBA2"])
             if CTRL and CTRL in c:
                 out[f"CONTROL_{CTRL}"] = c[CTRL]
             calls[(s, f"naive_{ref}_mq{q}")] = out

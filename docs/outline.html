@@ -325,15 +325,15 @@ mamba create -n ctyper  -c conda-forge -c bioconda ctyper=1.0.5                #
     <div class="scroll"><table>
       <thead><tr><th>Method</th><th>How it decides the copy number</th><th>Uses the twin-specific letters?</th><th>Maps reads?</th><th class="n">SMN1 exact</th><th class="n">α-globin exact</th></tr></thead>
       <tbody>
-        <tr><td>Naive depth, MAPQ ≥ 20</td><td>Rounded depth of confidently placed reads</td><td>no</td><td class="no">no</td><td class="n">0.0%</td><td class="n">56.1%</td></tr>
-        <tr><td>Naive depth, all reads</td><td>Rounded depth of every read</td><td>no</td><td class="no">no</td><td class="n">75.7%</td><td class="n">5.9%</td></tr>
+        <tr><td>Naive depth, MAPQ ≥ 20</td><td>Rounded depth of confidently placed reads (totals: twins added, then rounded)</td><td>no</td><td class="no">no</td><td class="n">0.0%</td><td class="n">87.8%</td></tr>
+        <tr><td>Naive depth, all reads</td><td>Rounded depth of every read (totals: twins added, then rounded)</td><td>no</td><td class="no">no</td><td class="n">75.7%</td><td class="n">3.2%</td></tr>
         <tr><td>ctyper 1.0.5</td><td>k-mers in the reads vs a pangenome allele panel; regression picks the alleles</td><td>yes (k-mers)</td><td class="no">no</td><td class="n">91.3%</td><td class="n">76.5%</td></tr>
 <tr><td>DRAGEN (excluded)</td><td>Not benchmarked: Illumina’s callers are purpose-built for exactly SMN1/SMN2 and α-globin, so not a like-for-like comparison with general methods (6a)</td><td>yes</td><td>(its own alignment)</td><td class="n">n/a</td><td class="n">n/a</td></tr>
         <tr class="hl"><td><b>Control gene RAD17</b> (naive depth, any MAPQ, either reference)</td><td>A unique single-copy gene next to SMN; truth = 1 annotated copy on each of the 446 haplotypes</td><td>not needed</td><td class="no">no</td><td class="n" colspan="2">100% (223/223)</td></tr>
         <tr><td>Locityper</td><td>Not run: needs read mapping, and no SMN/HBA locus exists</td><td>n/a</td><td class="yes">yes</td><td class="n">n/a</td><td class="n">n/a</td></tr>
       </tbody>
     </table></div>
-    <p class="mono" style="font-size:12.5px;color:var(--muted)">GRCh38 runs shown; CHM13 runs are within 1 point except naive α-globin (MAPQ ≥ 20: 64.7%; all reads: 16.7%). n = 206 people for SMN, 221 for α-globin. 95% intervals are about ±3–6 points; see the toolbox, step 5.</p>
+    <p class="mono" style="font-size:12.5px;color:var(--muted)">GRCh38 runs shown; CHM13 runs are within 1 point except naive α-globin at MAPQ ≥ 20 (33.9%). Total SMN copies (not shown): naive depth with all reads 98.1% on both references, ctyper 92.2%. GRCh38’s 87.8% for α-globin at MAPQ ≥ 20 is two biases cancelling: the short GC-rich genes are over-covered (~1.4×), and dropping ambiguous reads removes about as much. On CHM13 they don’t cancel (33.9%), so it is not a robust result. n = 206 people for SMN, 221 for α-globin. 95% intervals are about ±3–6 points; see the toolbox, step 5.</p>
   </section>
 
 
@@ -428,6 +428,7 @@ then normalise over the 36 cells → posterior; the call is the most likely cell
       <li><b>The pipeline itself is fine:</b> at the positive control RAD17, a unique single-copy gene in the same slice, plain depth is right for 223/223 people on both references, even with confident reads only. The failures below come from the twins.</li>
       <li><b>Discarding ambiguous reads makes these genes invisible:</b> SMN1 is right in 0% of people at MAPQ ≥ 20, on both references.</li>
       <li><b>CHM13 fixes reference errors, not real twins:</b> median CBS copy number at MAPQ ≥ 20 is 0.27 on GRCh38 and 2.27 on CHM13; SMN stays dark on both.</li>
+      <li><b>Depth counts the pair, not the twins:</b> adding SMN1 and SMN2 depth (all reads) and rounding once gives total SMN copies right in 98.1% of people on either reference, better than ctyper (92.2%). Splitting that total into SMN1 and SMN2 is what depth cannot do.</li>
       <li><b>The twin-specific signal is what works:</b> ctyper’s pangenome k-mers get SMN1 right in 91% of people, against 75.7% for depth with all reads and 77.2% for always guessing 2. α-globin is harder for ctyper (76.5%), mostly by calling a third allele in GC-rich, noisy depth.</li>
       <li><b>The truth is solid but not perfect:</b> it agrees with DRAGEN (used only as a cross-check, 6a) in 201/206 (SMN) and 220/221 (α-globin) people. Of the 6 disagreeing people, 5 look like assembly errors (all read-based methods side with DRAGEN; see 6a), and one (NA20905) is a real DRAGEN miss of a partial SMN2Δ7–8 copy.</li>
     </ul>
@@ -442,6 +443,7 @@ then normalise over the 36 cells → posterior; the call is the most likely cell
     <div class="scroll"><table>
       <thead><tr><th>Problem</th><th>Symptom</th><th>Fix</th></tr></thead>
       <tbody>
+        <tr><td>Naive totals rounded too early</td><td>SMN total over-called (GRCh38 80.1%, CHM13 92.7%): 4 copies showing as 2.5 + 2.5 rounded to 3 + 3</td><td>Add the twins’ depth first, then round once (13_concordance.py): SMN total 98.1% on both references. Same rule for α-globin; its numbers moved too (MAPQ ≥ 20: GRCh38 56.1 → 87.8%, CHM13 64.7 → 33.9%; all reads 5.9/16.7 → 3.2%)</td></tr>
         <tr><td>Unnamed false copies</td><td>GENCODE v49 has no names for CBSL/U2AF1L5/CRYAA2; one far gene made a 9 Mb window</td><td>Found the copies by aligning CBS/U2AF1/CRYAA to chr21; one window per gene cluster (slice 13 → 4.6 Mb)</td></tr>
         <tr><td>Contig naming</td><td>Every assembly lookup failed</td><td>FASTAs use <code>SAMPLE#HAP#CONTIG</code> names while the annotation uses bare contigs, so we added an alias map</td></tr>
         <tr><td>Fragmented assemblies</td><td>A contig ending inside SMN2 looked like an SMN2Δ7-8 copy</td><td>Completeness rule: one contig, anchors on both sides, no copy near a contig end; otherwise missing data</td></tr>
