@@ -133,6 +133,12 @@ def main():
                                     "HBA_hybrid", "HBA_total", "usable_SMN", "usable_HBA", "flags"]}
         data["samples"].append(dict(id=s, role=r["role"], pop=r["population"], superpop=r["superpop"], sex=r["sex"],
                                     truth=tr, dragen=dragen.get(s, {}), ctyper=cty.get(s) or None))
+    # per-person calls for every scored method (truth samples only) so the page can stratify and add CIs
+    calls = defaultdict(lambda: defaultdict(dict))
+    for r in tsv(path("tables", "calls_long.tsv")):
+        if r["truth"] != "":
+            calls[r["method"]][r["target"]][r["sample"]] = int(r["call"])
+    data["calls"] = calls
     pg = os.path.join(OUT, "pangraph.json")
     data["pangraph"] = json.load(open(pg)) if os.path.exists(pg) else {}
     data["meta"] = dict(n_selected=len(sel), n_truth=len(truth), refs=list(data["caller"].keys()),

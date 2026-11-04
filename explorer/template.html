@@ -1,4 +1,4 @@
-<title>Dark Dosage Explorer</title>
+<title>Dark Copy Toolbox</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -109,95 +109,224 @@ ul.caveats { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 
 .pg-figs img { width: 100%; border: 1px solid var(--rule); border-radius: 6px; background: #fff; }
 .pg-figs figcaption { font-size: 12.5px; color: var(--muted); }
 @media (max-width: 760px) { .pg-figs { grid-template-columns: 1fr; } }
+.stepnav { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 4; background: color-mix(in srgb, var(--ground) 92%, transparent); backdrop-filter: blur(6px);
+  border-bottom: 1px solid var(--rule); padding-block: 8px; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: space-between; }
+.stepnav ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px; }
+.stepnav a { display: inline-flex; align-items: center; gap: 6px; font: 500 13px var(--f-body); color: var(--ink-2); text-decoration: none; padding: 5px 9px; border-radius: 5px; }
+.stepnav a:hover { background: var(--band); }
+.stepnav a.active { background: var(--accent); color: var(--surface); }
+.stepnav a .n { font: 600 11px var(--f-mono); width: 18px; height: 18px; border-radius: 50%; display: inline-grid; place-items: center; border: 1px solid currentColor; }
+.person { display: flex; gap: 8px; flex-wrap: wrap; }
+section.step { display: grid; gap: 14px; scroll-margin-top: 70px; padding-top: 6px; border-top: 3px solid var(--accent); }
+.step-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding-top: 10px; }
+.badge { font: 600 11.5px var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; background: var(--accent); color: var(--surface); padding: 3px 8px; border-radius: 4px; }
+.badge.muted { background: var(--axis); }
+h4 { margin: 0 0 4px; font: 650 12px var(--f-body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.explain { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 18px; font-size: 14px; color: var(--ink-2); }
+.explain ul { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 4px; }
+.explain li .sw { margin-right: 6px; }
+@media (max-width: 760px) { .explain { grid-template-columns: 1fr; } }
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; display: grid; gap: 14px; min-width: 0; }
+.takeaway { border-left: 4px solid var(--psv); background: color-mix(in srgb, var(--psv) 9%, var(--surface)); padding: 10px 14px; border-radius: 0 6px 6px 0; font-size: 14.5px; color: var(--ink); max-width: 100ch; }
+.takeaway b { display: block; font: 650 11.5px var(--f-body); text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-2); margin-bottom: 2px; }
+.concepts, .locuscards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.concept, .lcard { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; align-content: start; font-size: 14px; color: var(--ink-2); }
+.concept b, .lcard b { font-family: var(--f-display); font-size: 16px; color: var(--ink); }
+.lcard .tag { font: 500 11.5px var(--f-mono); color: var(--muted); }
+.lcard button, .chips button { justify-self: start; font: 500 13px var(--f-body); border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 5px; padding: 5px 10px; cursor: pointer; }
+.lcard button:hover, .chips button:hover { background: var(--accent); color: var(--surface); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; font-size: 13px; color: var(--muted); }
+.chips button { padding: 3px 8px; font-size: 12.5px; }
+.howtruth { background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 16px; font-size: 14px; color: var(--ink-2); }
+.howtruth summary { cursor: pointer; color: var(--ink); font-size: 15px; }
+.howtruth ol { margin: 10px 0; padding-left: 20px; display: grid; gap: 6px; max-width: 100ch; }
+.howtruth b { color: var(--ink); }
+.notrun { border: 1px dashed var(--axis); border-radius: 6px; padding: 10px 12px; font-size: 13.5px; color: var(--ink-2); }
+details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
+.glossary { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0; font-size: 14px; }
+.glossary dt { font-weight: 600; color: var(--ink); }
+.glossary dd { margin: 0; color: var(--ink-2); }
+@media (max-width: 600px) { .glossary { grid-template-columns: 1fr; } .glossary dd { margin-bottom: 6px; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
 <div class="wrap">
   <header>
     <div class="eyebrow">BioDATA ASCENT code-a-thon · CSHL · 4 Nov 2026</div>
-    <h1>Dark Dosage Explorer</h1>
-    <p class="lede">How well does read depth count copies of genes that live in segmental duplications? Browse 1000 Genomes 30x read depth across SMN1/SMN2, the α-globin cluster and a GRCh38 false duplication on chr21, on GRCh38 and on T2T-CHM13, and check every caller against copy numbers read directly off HPRC release-2 assemblies.</p>
+    <h1>Dark Copy Toolbox</h1>
+    <p class="lede">Some medically important genes have near-identical twins elsewhere in the genome, so standard pipelines can't tell how many copies a person has. This toolbox walks through the problem in six steps, from <em>why these genes are hard</em> to <em>which method counts them correctly</em>, using 650 people from 1000 Genomes and copy numbers read directly off their HPRC genome assemblies.</p>
     <div class="facts" id="facts"></div>
   </header>
 
-  <section class="panel" aria-labelledby="h-locus">
-    <div class="panel-head">
-      <h2 id="h-locus">Locus browser</h2>
-      <p>Normalised copy number in bins (2 = diploid baseline). Reads that could come from either paralog get MAPQ 0, so the gap between the two lines is the "dark" part.</p>
+  <nav class="stepnav" aria-label="Steps">
+    <ol id="stepnav">
+      <li><a href="#step1"><span class="n">1</span>The problem</a></li>
+      <li><a href="#step2"><span class="n">2</span>Reads on a reference</a></li>
+      <li><a href="#step3"><span class="n">3</span>The pangenome</a></li>
+      <li><a href="#step4"><span class="n">4</span>One person</a></li>
+      <li><a href="#step5"><span class="n">5</span>Call copies yourself</a></li>
+      <li><a href="#step6"><span class="n">6</span>Compare methods</a></li>
+      <li><a href="#step7"><span class="n">?</span>Caveats &amp; glossary</a></li>
+    </ol>
+    <div class="person">
+      <label class="ctl" for="sampleSel">Person <select id="sampleSel"></select></label>
+      <label class="ctl" for="sampleSearch"><input type="search" id="sampleSearch" placeholder="find ID or population…" size="16"></label>
     </div>
-    <div class="controls">
-      <div class="seg" role="group" aria-label="Locus" id="locusSeg"></div>
-      <label class="ctl" for="sampleSel">Sample <select id="sampleSel"></select></label>
-      <label class="ctl" for="sampleSearch"><input type="search" id="sampleSearch" placeholder="find sample…" size="12"></label>
-      <div class="legend">
-        <span><span class="sw" style="background:var(--mq0)"></span>MAPQ ≥ 0</span>
-        <span><span class="sw" style="background:var(--mq20)"></span>MAPQ ≥ 20</span>
-        <span><span class="sw band"></span>10–90% of all sliced samples (MAPQ ≥ 0)</span>
-        <span><span class="sw" style="background:var(--psv);height:8px;width:2px"></span>paralog-specific site</span>
+  </nav>
+
+  <!-- ============================================================ STEP 1 -->
+  <section class="step" id="step1" aria-labelledby="h1s">
+    <div class="step-head"><span class="badge">Step 1</span><h2 id="h1s">The problem: why some genes are “dark”</h2></div>
+    <div class="concepts">
+      <div class="concept"><b>Twin genes</b><p>SMN1 and SMN2 differ at only a handful of letters; so do HBA1 and HBA2. A 150-letter sequencing read from one twin usually matches the other one perfectly.</p></div>
+      <div class="concept"><b>Counting by read depth</b><p>Copy number is normally measured by counting reads: twice the reads means twice the copies. But the aligner can't tell which twin a read came from, so it flags the read as ambiguous (MAPQ 0), and most pipelines throw those reads away.</p></div>
+      <div class="concept"><b>Getting the true answer</b><p>For 223 of the 650 people, HPRC has fully assembled both copies of each chromosome. We counted gene copies directly in those sequences. That's the answer key every method is scored against.</p></div>
+    </div>
+    <details class="howtruth" open><summary><b>How do we know the true copy number?</b></summary>
+      <ol>
+        <li><b>Use people with a finished genome.</b> 223 of the 650 people also have an HPRC release-2 assembly: both chromosome copies (haplotypes) sequenced with long reads and assembled end to end without a reference.</li>
+        <li><b>Find the region in each haplotype</b> using the HPRC gene annotation, and only accept it if <b>one continuous piece</b> of the assembly holds every copy plus a unique gene on each side (e.g. MARVELD2 … BDP1 around SMN). A fragmented region counts as missing data, never as “0 copies”.</li>
+        <li><b>Count the copies by sequence.</b> Align the gene (GRCh38 SMN1 exons 1–8, or HBA2) to that stretch; every full-length match is one copy.</li>
+        <li><b>Say which twin each copy is.</b> SMN1 vs SMN2 is decided by the letter at c.840 in exon 7 (C = SMN1, T = SMN2), checked against all ~16 twin-specific positions; a copy missing exons 7–8 is SMN2Δ7-8. HBA1 vs HBA2 is decided by the HBA twin-specific positions.</li>
+        <li><b>Add the two haplotypes</b> to get the person's copy number, e.g. haplotype 1 has SMN1+SMN2, haplotype 2 has SMN1 → SMN1 = 2, SMN2 = 1.</li>
+      </ol>
+      <p class="note">Check: this truth agrees with DRAGEN's independent read-based calls in 201/206 people for SMN and 220/221 for α-globin. Where they disagree, the assembly can be the one that's wrong. HG00253's assembly contains the whole α-globin region twice, but its reads show only normal depth, so it is most likely an assembly error (see step 3). 206 people are usable for SMN and 221 for α-globin.</p>
+    </details>
+    <h3>The three regions in this toolbox</h3>
+    <div class="locuscards" id="locusCards"></div>
+    <div class="takeaway"><b>Key message</b> These genes are clinically important (SMA carrier screening, α-thalassemia), but the regions they sit in are invisible to standard pipelines. The steps below show why, and which methods can still count them.</div>
+  </section>
+
+  <!-- ============================================================ STEP 2 -->
+  <section class="step" id="step2" aria-labelledby="h2s">
+    <div class="step-head"><span class="badge">Step 2</span><h2 id="h2s">Look at the reads on a linear reference</h2></div>
+    <div class="explain">
+      <div><h4>What you're looking at</h4><p>Read depth for the selected person along the region, on the old reference GRCh38 (top) and the complete T2T-CHM13 (bottom). Depth is converted to copy number, so 2 = the normal two copies.</p></div>
+      <div><h4>How to read it</h4><ul>
+        <li><span class="sw" style="background:var(--mq0)"></span><b>Blue</b>: all reads.</li>
+        <li><span class="sw" style="background:var(--mq20)"></span><b>Orange</b>: only reads the aligner places confidently (MAPQ ≥ 20).</li>
+        <li><span class="sw band"></span><b>Grey band</b>: the range where 80% of the 650 people fall.</li>
+        <li><span class="sw" style="background:var(--psv);height:8px;width:2px"></span><b>Yellow ticks</b>: the few positions where the twins differ.</li>
+        <li>Where blue stays near 2 and orange drops to 0, the reads are present but their placement is ambiguous. That's the “dark” part. Hover for exact values.</li></ul></div>
+    </div>
+    <div class="panel">
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Region" id="locusSeg"></div>
+      </div>
+      <div class="tracks" id="tracks"></div>
+      <p class="note" id="locusNote"></p>
+    </div>
+    <div class="takeaway"><b>Key message</b> Over SMN1/SMN2, confident reads disappear on <em>both</em> references, because the twins are real. On chr21, GRCh38 contains a fake extra copy of CBS/U2AF1/CRYAA, so reads split between the two and CBS looks lost. CHM13 removes the fake copy and the genes come back at 2.</div>
+  </section>
+
+  <!-- ============================================================ STEP 3 -->
+  <section class="step" id="step3" aria-labelledby="h-pg">
+    <div class="step-head"><span class="badge">Step 3</span><h2 id="h-pg">See the region as a pangenome</h2></div>
+    <div class="explain">
+      <div><h4>What you're looking at</h4><p>Instead of one reference, here are many people's own assembled sequences of the region (from unique gene to unique gene), plus GRCh38 and CHM13. They are merged into a local pangenome graph with pggb, built for this toolbox. No reads were aligned to it.</p></div>
+      <div><h4>How to read it</h4><ul>
+        <li><b>Rows</b>: one haplotype (one chromosome copy). Coloured boxes are genes; blue and orange are the two twins, typed from the sequence. Hover a box for details, or click a row to select that person.</li>
+        <li><b>1D picture</b>: grey = this part of the graph is passed once; warm colours = passed several times (the extra copies).</li>
+        <li><b>2D picture</b>: unique sequence is a straight line; duplicated sequence folds into loops.</li></ul></div>
+    </div>
+    <div class="panel">
+      <div class="controls"><div class="seg" role="group" aria-label="Graph" id="pgSeg"></div><div class="legend" id="pgLegend"></div></div>
+      <div class="facts" id="pgFacts"></div>
+      <div class="pg-wrap"><div class="scroll" id="pgPaths"></div>
+        <div class="pg-figs">
+          <figure><img id="pgImg1" alt="odgi 1D depth view of the graph"><figcaption>odgi 1D view, one row per haplotype over the graph's nodes. Black arcs below are long-range edges (rearrangements).</figcaption></figure>
+          <figure><img id="pgImg2" alt="odgi 2D layout of the graph"><figcaption>odgi 2D layout of the same graph.</figcaption></figure>
+        </div>
+      </div>
+      <p class="note" id="pgNote"></p>
+    </div>
+    <div class="takeaway"><b>Key message</b> The SMN region is 0.8–3 Mb and built differently in almost every person. That's why a 28 kb gene needs a Mb-scale view, and why Locityper can't handle it. Yet 36 Mb of sequence folds into a 1 Mb graph, because identical copies share nodes. A pangenome shows the variety, but counting copies still needs copy-specific signals (k-mers or twin-specific sites).</div>
+  </section>
+
+  <!-- ============================================================ STEP 4 -->
+  <section class="step" id="step4" aria-labelledby="h-sample">
+    <div class="step-head"><span class="badge">Step 4</span><h2 id="h-sample">One person, every answer · <span id="cardName" class="mono"></span></h2></div>
+    <div class="explain">
+      <div><h4>What you're looking at</h4><p>For the selected person: the copy numbers in their own assembly (truth), the answers of the paralog-aware callers (DRAGEN ×3, ctyper ×2), and our open Bayesian caller's full uncertainty.</p></div>
+      <div><h4>How to read it</h4><ul>
+        <li>Numbers are whole-genome counts (both chromosomes): SMN1 = 2 is typical, 1 = SMA carrier.</li>
+        <li><b>Heatmap</b>: how likely each SMN1 × SMN2 combination is. Darker means more likely, and the orange ring marks the truth.</li>
+        <li>Use the shortcuts to jump to people where methods tend to disagree.</li></ul></div>
+    </div>
+    <div class="panel">
+      <div class="chips" id="chips"></div>
+      <div class="cardrow" id="card"></div>
+    </div>
+    <div class="takeaway"><b>Key message</b> For most people every method agrees. Differences show up in the unusual cases (carriers, 4 copies, α-globin deletions), and sometimes the assembly itself is wrong (HG00253).</div>
+  </section>
+
+  <!-- ============================================================ STEP 5 -->
+  <section class="step" id="step5" aria-labelledby="h-lab">
+    <div class="step-head"><span class="badge">Step 5</span><h2 id="h-lab">Call copy numbers yourself</h2></div>
+    <div class="explain">
+      <div><h4>What you're looking at</h4><p>Our open Bayesian caller (v0) running live in your browser on all 650 people. It combines two clues: <b>total depth</b> says how many SMN1+SMN2 copies there are together, and the <b>fraction of SMN1-like reads at the twin-specific positions</b> says how they split.</p></div>
+      <div><h4>The knobs</h4><ul>
+        <li><b>site error ε</b>: how often a read shows the other twin's letter by mistake.</li>
+        <li><b>independent sites</b>: how many of the ~16 twin-specific positions count as separate evidence (they're close together, so far fewer than 16).</li>
+        <li><b>allele-fraction concentration</b>: how tightly the read fraction follows the true copy ratio.</li>
+        <li><b>depth weight</b>: how much to trust depth. <b>Prior</b>: genotype frequencies in the other people (from DRAGEN).</li></ul></div>
+    </div>
+    <div class="panel">
+      <div class="controls">
+        <div class="seg" role="group" aria-label="Reference" id="refSeg"></div>
+        <label class="ctl" for="sEps">site error ε <input type="range" id="sEps" min="0.001" max="0.05" step="0.001" value="0.01"><span class="mono" id="vEps"></span></label>
+        <label class="ctl" for="sEff">independent sites <input type="range" id="sEff" min="0" max="16" step="0.5" value="3"><span class="mono" id="vEff"></span></label>
+        <label class="ctl" for="sConc">allele-fraction concentration <input type="range" id="sConc" min="10" max="1000" step="10" value="150"><span class="mono" id="vConc"></span></label>
+        <label class="ctl" for="sDepth">depth weight <input type="range" id="sDepth" min="0" max="2" step="0.1" value="1"><span class="mono" id="vDepth"></span></label>
+        <label class="ctl" for="cPrior"><input type="checkbox" id="cPrior" checked> population prior (DRAGEN 4.2.7, leave-one-out)</label>
+      </div>
+      <div class="statrow" id="labStats"></div>
+      <div class="grid2">
+        <div class="sub"><h3>SMN1: called vs truth</h3><p class="note">Rows = truth, columns = call. Green cells are correct, red cells are errors.</p><div class="scroll" id="confSMN"></div></div>
+        <div class="sub"><h3>Is the caller's confidence honest?</h3><p class="note">Each dot groups people by the caller's stated confidence (x) and plots how often it was actually right (y). On the dashed line, confidence is honest.</p><div id="relPlot"></div></div>
       </div>
     </div>
-    <div class="tracks" id="tracks"></div>
-    <p class="note" id="locusNote"></p>
+    <div class="takeaway"><b>Key message</b> A simple, transparent model gets about 94–95% of people right from depth plus a few twin-specific positions. Switch the prior off to see what the reads alone can do: α-globin drops the most.</div>
   </section>
 
-  <section class="panel" aria-labelledby="h-sample">
-    <div class="panel-head">
-      <h2 id="h-sample">Sample card · <span id="cardName" class="mono"></span></h2>
-      <p>Assembly truth next to every caller for the selected sample.</p>
+  <!-- ============================================================ STEP 6 -->
+  <section class="step" id="step6" aria-labelledby="h-score">
+    <div class="step-head"><span class="badge">Step 6</span><h2 id="h-score">Compare all methods against the truth</h2></div>
+    <div class="explain">
+      <div><h4>What the percentage means</h4><p>The share of people for whom the method's copy number <b>exactly</b> equals the assembly truth (whole-genome count, both chromosomes; off by one counts as wrong). Only people with a complete assembly at that region are counted.</p></div>
+      <div><h4>How to read it</h4><ul>
+        <li><b>Whiskers</b>: 95% confidence interval. With ~200 people, overlapping whiskers mean “not clearly different”.</li>
+        <li><b>Dashed line</b>: the score from always guessing the most common value. A method below it is worse than guessing.</li>
+        <li><b>Atypical people only</b>: drops everyone with the common value (SMN1 = 2, α-globin = 4). This is where the clinically interesting cases are, and guessing scores 0%.</li></ul></div>
     </div>
-    <div class="cardrow" id="card"></div>
-  </section>
-
-  <section class="panel" aria-labelledby="h-pg">
-    <div class="panel-head">
-      <h2 id="h-pg">Pangenome view</h2>
-      <p>A local pangenome graph (pggb) built from complete HPRC R2 haplotypes plus GRCh38 and CHM13, anchor to anchor. Each row is one haplotype, coloured by our truth call. Hover a gene for details; click a row to open that sample above.</p>
-    </div>
-    <div class="controls"><div class="seg" role="group" aria-label="Graph" id="pgSeg"></div><div class="legend" id="pgLegend"></div></div>
-    <div class="facts" id="pgFacts"></div>
-    <div class="pg-wrap"><div class="scroll" id="pgPaths"></div>
-      <div class="pg-figs">
-        <figure><img id="pgImg1" alt="odgi 1D depth view of the graph"><figcaption>odgi 1D view: one row per haplotype over graph nodes. Grey = node visited once; warm colours = visited 2+ times, i.e. the haplotype loops through the same sequence (its extra SMN or HBA copies). Black arcs below are the graph's long-range edges.</figcaption></figure>
-        <figure><img id="pgImg2" alt="odgi 2D layout of the graph"><figcaption>odgi 2D layout. Unique flanks are straight lines; the duplicated core folds into loops, because every copy of a near-identical gene collapses onto the same nodes.</figcaption></figure>
+    <div class="panel">
+      <div class="controls">
+        <div class="seg" role="group" aria-label="What is counted" id="tgtSeg"></div>
+        <div class="seg" role="group" aria-label="Which people" id="subSeg"></div>
       </div>
+      <div id="score"></div>
+      <details><summary>Table view</summary><div class="scroll" id="scoreTable"></div></details>
+      <div class="notrun"><b>Not run: Locityper.</b> Excluded by design. It aligns reads to candidate haplotypes, and this project does no read mapping. Its public database also has no SMN or HBA locus, and SMN would need a 1–3 Mb locus (see step 3).</div>
     </div>
-    <p class="note" id="pgNote"></p>
+    <div class="takeaway"><b>Key message</b> Paralog-aware callers that use twin-specific signals (DRAGEN; ctyper's k-mers; our Bayes v0) count SMN correctly in 91–99.5% of people. Counting confident reads alone (MAPQ ≥ 20) gets almost nobody right, and counting all reads is no better than guessing.</div>
   </section>
 
-  <section class="panel" aria-labelledby="h-lab">
-    <div class="panel-head">
-      <h2 id="h-lab">Caller lab</h2>
-      <p>The Bayesian caller v0 runs in your browser: depth (negative binomial) + paralog-site allele counts (beta-binomial) + an optional population prior. Move a slider and every sample is re-called and re-scored against the assemblies.</p>
-    </div>
-    <div class="controls">
-      <div class="seg" role="group" aria-label="Reference" id="refSeg"></div>
-      <label class="ctl" for="sEps">site error ε <input type="range" id="sEps" min="0.001" max="0.05" step="0.001" value="0.01"><span class="mono" id="vEps"></span></label>
-      <label class="ctl" for="sEff">independent sites <input type="range" id="sEff" min="0" max="16" step="0.5" value="3"><span class="mono" id="vEff"></span></label>
-      <label class="ctl" for="sConc">allele-fraction concentration <input type="range" id="sConc" min="10" max="1000" step="10" value="150"><span class="mono" id="vConc"></span></label>
-      <label class="ctl" for="sDepth">depth weight <input type="range" id="sDepth" min="0" max="2" step="0.1" value="1"><span class="mono" id="vDepth"></span></label>
-      <label class="ctl" for="cPrior"><input type="checkbox" id="cPrior" checked> population prior (DRAGEN 4.2.7, leave-one-out)</label>
-    </div>
-    <div class="statrow" id="labStats"></div>
-    <div class="grid2">
-      <div class="sub"><h3>SMN1 — called vs truth</h3><div class="scroll" id="confSMN"></div></div>
-      <div class="sub"><h3>Reliability — posterior of the call vs fraction correct (SMN1+SMN2)</h3><div id="relPlot"></div></div>
-    </div>
-  </section>
-
-  <section class="panel" aria-labelledby="h-score">
-    <div class="panel-head">
-      <h2 id="h-score">Scoreboard</h2>
-      <p>Exact-match accuracy against assembly truth, usable truth samples only. Naive = rounded normalised depth per gene. The Bayes row follows the caller lab.</p>
-    </div>
-    <div class="controls"><div class="seg" role="group" aria-label="Target" id="tgtSeg"></div></div>
-    <div id="score"></div>
-    <div class="scroll" id="scoreTable"></div>
-    <p class="note"><b>Not run: Locityper.</b> Excluded by design. It aligns reads to candidate haplotypes, and this project does no read mapping. Its public database also has no SMN or HBA locus, and SMN would need a 1–3 Mb locus with unique flanks. ctyper (k-mer counting, no mapping) is the pangenome genotyper on this board.</p>
-  </section>
-
-  <section class="panel" aria-labelledby="h-cav">
-    <h2 id="h-cav">Read before quoting a number</h2>
-    <ul class="caveats" id="caveats"></ul>
+  <!-- ============================================================ CAVEATS -->
+  <section class="step" id="step7" aria-labelledby="h-cav">
+    <div class="step-head"><span class="badge muted">Info</span><h2 id="h-cav">Before you quote a number</h2></div>
+    <div class="panel"><ul class="caveats" id="caveats"></ul></div>
+    <h3>Glossary</h3>
+    <dl class="glossary">
+      <dt>Copy number</dt><dd>How many copies of a gene a person carries across both chromosomes. Most people have 2 per gene.</dd>
+      <dt>Paralog / twin gene</dt><dd>A near-identical copy of a gene elsewhere in the genome, made by an old duplication.</dd>
+      <dt>Read depth</dt><dd>How many sequencing reads cover a position. It scales with copy number.</dd>
+      <dt>MAPQ</dt><dd>The aligner's confidence that a read is placed correctly. 0 means it fits equally well in two or more places.</dd>
+      <dt>PSV</dt><dd>Paralog-specific variant: a position where the twins differ, and the only place reads can be told apart.</dd>
+      <dt>Haplotype</dt><dd>One of a person's two chromosome copies.</dd>
+      <dt>Assembly</dt><dd>A person's genome sequence reconstructed end to end from long reads, without relying on a reference.</dd>
+      <dt>Pangenome graph</dt><dd>Many people's sequences merged into one graph. Shared sequence becomes shared nodes and differences become branches.</dd>
+      <dt>GRCh38 / CHM13</dt><dd>The standard human reference (with gaps and some errors) and the first complete, gap-free one.</dd>
+    </dl>
   </section>
 </div>
 <div class="tip" id="tip" hidden></div>
@@ -210,7 +339,7 @@ const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS,
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const LOCI = [["SMN", "SMN1 / SMN2 · chr5q13"], ["HBA", "α-globin · chr16p13.3"], ["CHR21_FALSEDUP", "chr21 false duplication"]];
 const REFNAME = { grch38: "GRCh38", chm13: "T2T-CHM13v2.0" };
-const state = { locus: "SMN", sample: null, ref: "grch38", target: "SMN1" };
+const state = { locus: "SMN", sample: null, ref: "grch38", target: "SMN1", subset: "all" };
 
 // ---------------------------------------------------------------- samples
 const samples = D.samples;
@@ -439,23 +568,79 @@ const MLAB = (m) => m.replace("naive_grch38_mq0", "Naive depth · GRCh38 · MAPQ
   .replace("naive_chm13_mq0", "Naive depth · CHM13 · MAPQ≥0").replace("naive_chm13_mq20", "Naive depth · CHM13 · MAPQ≥20")
   .replace(/^dragen_4\.0\.3$/, "DRAGEN 4.0.3 · graph hg38").replace(/^dragen_4\.2\.7$/, "DRAGEN 4.2.7 · graph hg38 v3").replace(/^dragen_4\.4\.7$/, "DRAGEN 4.4.7 · multigenome")
   .replace(/^ctyper_grch38$/, "ctyper 1.0.5 · k-mers, GRCh38-slice reads").replace(/^ctyper_chm13$/, "ctyper 1.0.5 · k-mers, CHM13-slice reads").replace(/^bayes_(.*)$/, "Bayes v0 (offline run: $1)");
+const TGT_COMMON = {};
+function wilson(k, n) { if (!n) return [0, 0]; const z = 1.96, p = k / n, d = 1 + z * z / n, c = (p + z * z / (2 * n)) / d, h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d; return [Math.max(0, c - h), Math.min(1, c + h)]; }
 function drawScore() {
   const tgt = state.target;
-  const rows = D.concordance.filter((r) => r.target === tgt).map((r) => ({ m: MLAB(r.method), n: +r.n, ok: +r.n_correct, over: +r.n_over, under: +r.n_under, live: false }));
-  const B = window.BAYES?.[tgt]; if (B && B[0]) rows.push({ m: `Bayes v0 · ${REFNAME[state.ref]} · live settings`, n: B[0], ok: B[1], over: null, under: null, live: true });
+  const truthBy = {}; for (const s of samples) { const t = truthOf(s.id)[tgt]; if (t != null) truthBy[s.id] = t; }
+  const cnt = {}; Object.values(truthBy).forEach((v) => (cnt[v] = (cnt[v] || 0) + 1));
+  const common = +Object.entries(cnt).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const keep = (sid) => truthBy[sid] != null && (state.subset === "all" || truthBy[sid] !== common);
+  const score = (callsBy) => { let n = 0, ok = 0, over = 0, under = 0;
+    for (const [sid, c] of Object.entries(callsBy)) { if (!keep(sid)) continue; n++; const t = truthBy[sid]; ok += c === t; over += c > t; under += c < t; }
+    return { n, ok, over, under }; };
+  const rows = [];
+  for (const [m, byT] of Object.entries(D.calls || {})) { const c = byT[tgt]; if (!c) continue; const r = score(c); if (r.n) rows.push({ m: MLAB(m), ...r }); }
+  if (LAST) { const c = {}; for (const [sid, r] of Object.entries(LAST)) { const fam = tgt === "HBA_total" ? "HBA" : "SMN"; const x = r[fam]; if (!x) continue;
+      c[sid] = tgt === "SMN1" ? x.A : tgt === "SMN2_all" ? x.B : x.total; }
+    const r = score(c); if (r.n) rows.push({ m: `Bayes v0 · ${REFNAME[state.ref]} · live settings (step 5)`, ...r, live: true }); }
+  const nAll = Object.keys(truthBy).filter(keep).length;
+  const base = state.subset === "all" ? (cnt[common] || 0) / Math.max(1, nAll) : 0;
   rows.sort((a, b) => b.ok / b.n - a.ok / a.n);
   const host = $("#score"); host.innerHTML = "";
-  const W = 1100, rowH = 26, M = 300, H = rows.length * rowH + 30; const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `accuracy for ${tgt}` }, host);
-  const X = (v) => M + v * (W - M - 60);
-  for (const v of [0, 0.25, 0.5, 0.75, 1]) { el("line", { x1: X(v), x2: X(v), y1: 0, y2: H - 22, stroke: css("--rule"), "stroke-width": 0.7 }, svg); el("text", { x: X(v), y: H - 6, "text-anchor": "middle" }, svg).textContent = `${v * 100}%`; }
+  const head = document.createElement("p"); head.className = "note";
+  head.innerHTML = `${nAll} people with assembly truth${state.subset === "all" ? "" : ` whose ${TLAB[tgt]} is <b>not</b> ${common}`}. Most common value: <b>${common}</b> (${cnt[common]} of ${Object.keys(truthBy).length} people).`;
+  host.appendChild(head);
+  const W = 1100, rowH = 26, M = 330, H = rows.length * rowH + 40; const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `accuracy for ${tgt}` }, host);
+  const X = (v) => M + v * (W - M - 150);
+  for (const v of [0, 0.25, 0.5, 0.75, 1]) { el("line", { x1: X(v), x2: X(v), y1: 0, y2: H - 30, stroke: css("--rule"), "stroke-width": 0.7 }, svg); el("text", { x: X(v), y: H - 14, "text-anchor": "middle" }, svg).textContent = `${v * 100}%`; }
+  el("line", { x1: X(base), x2: X(base), y1: 0, y2: H - 30, stroke: css("--ink-2"), "stroke-width": 1.3, "stroke-dasharray": "5 4" }, svg);
+  el("text", { x: X(base) + 4, y: H - 2, style: `fill:${css("--ink-2")}` }, svg).textContent = `always guess ${common}: ${(100 * base).toFixed(1)}%`;
   rows.forEach((r, i) => {
-    const y = 8 + i * rowH, a = r.ok / r.n;
-    el("text", { x: M - 10, y: y + 13, "text-anchor": "end", style: `fill:${css(r.live ? "--ink" : "--ink-2")};font-family:var(--f-body);font-size:12.5px;${r.live ? "font-weight:600" : ""}` }, svg).textContent = r.m;
-    el("rect", { x: X(0), y: y + 3, width: Math.max(2, X(a) - X(0)), height: 14, rx: 3, fill: css(r.live ? "--mq20" : "--mq0") }, svg);
-    el("text", { x: X(a) + 6, y: y + 14, style: `fill:${css("--ink")}` }, svg).textContent = `${(100 * a).toFixed(1)}%  (${r.ok}/${r.n})`;
+    const y = 6 + i * rowH, a = r.ok / r.n, [lo, hi] = wilson(r.ok, r.n);
+    const g = el("g", {}, svg);
+    el("text", { x: M - 10, y: y + 13, "text-anchor": "end", style: `fill:${css(r.live ? "--ink" : "--ink-2")};font-family:var(--f-body);font-size:12.5px;${r.live ? "font-weight:600" : ""}` }, g).textContent = r.m;
+    el("rect", { x: X(0), y: y + 3, width: Math.max(2, X(a) - X(0)), height: 14, rx: 3, fill: css(r.live ? "--mq20" : "--mq0") }, g);
+    el("line", { x1: X(lo), x2: X(hi), y1: y + 10, y2: y + 10, stroke: css("--ink"), "stroke-width": 1.2 }, g);
+    for (const v of [lo, hi]) el("line", { x1: X(v), x2: X(v), y1: y + 6, y2: y + 14, stroke: css("--ink"), "stroke-width": 1.2 }, g);
+    el("text", { x: Math.max(X(a), X(hi)) + 8, y: y + 14, style: `fill:${css("--ink")}` }, g).textContent = `${(100 * a).toFixed(1)}%  (${r.ok}/${r.n})`;
+    el("rect", { x: 0, y, width: W, height: rowH, fill: "transparent" }, g).addEventListener("mousemove", (ev) => { const tip = $("#tip"); tip.hidden = false;
+      tip.innerHTML = `<div><b>${r.m}</b></div><div>${r.ok} of ${r.n} exactly right (${(100 * a).toFixed(1)}%)</div><div class="k">95% CI ${(100 * lo).toFixed(1)}–${(100 * hi).toFixed(1)}%</div><div class="k">over-called ${r.over} · under-called ${r.under}</div>`;
+      tip.style.left = ev.pageX + (ev.clientX > window.innerWidth - 260 ? -250 : 14) + "px"; tip.style.top = ev.pageY + 12 + "px"; });
   });
-  $("#scoreTable").innerHTML = `<table><thead><tr><th>method</th><th class="num">n</th><th class="num">exact</th><th class="num">over-called</th><th class="num">under-called</th></tr></thead><tbody>` +
-    rows.map((r) => `<tr><td>${r.m}</td><td class="num">${r.n}</td><td class="num">${r.ok}</td><td class="num">${r.over ?? "–"}</td><td class="num">${r.under ?? "–"}</td></tr>`).join("") + "</tbody></table>";
+  svg.addEventListener("mouseleave", () => ($("#tip").hidden = true));
+  $("#scoreTable").innerHTML = `<table><thead><tr><th>method</th><th class="num">people</th><th class="num">exactly right</th><th class="num">%</th><th class="num">95% CI</th><th class="num">too high</th><th class="num">too low</th></tr></thead><tbody>` +
+    rows.map((r) => { const [lo, hi] = wilson(r.ok, r.n); return `<tr><td>${r.m}</td><td class="num">${r.n}</td><td class="num">${r.ok}</td><td class="num">${(100 * r.ok / r.n).toFixed(1)}</td><td class="num">${(100 * lo).toFixed(1)}–${(100 * hi).toFixed(1)}</td><td class="num">${r.over}</td><td class="num">${r.under}</td></tr>`; }).join("") + "</tbody></table>";
+}
+const TLAB = { SMN1: "SMN1 copy number", SMN2_all: "SMN2 copy number", SMN_total: "SMN1+SMN2 total", HBA_total: "α-globin gene total" };
+// ---------------------------------------------------------------- step 1 cards, step 4 shortcuts, step nav
+function locusCards() {
+  const info = [
+    ["SMN", "SMN1 / SMN2", "chr5q13 · spinal muscular atrophy", "Losing both SMN1 copies causes SMA, and 1 copy makes you a carrier (≈1 in 50 people). SMN2 copy number changes how severe SMA is. The twins differ at ~16 positions, and the c.840 letter decides which is which."],
+    ["HBA", "HBA1 / HBA2 (α-globin)", "chr16p13.3 · α-thalassemia", "Deletions such as −α3.7 merge the two genes into one and are common in African, South and Southeast Asian ancestry. Losing 2–4 of the 4 copies causes α-thalassemia."],
+    ["CHR21_FALSEDUP", "CBS · U2AF1 · CRYAA", "chr21 · a reference error", "GRCh38 accidentally contains a second, fake copy of these genes near the centromere. Reads split between the real and fake copies, so the real genes look lost. T2T-CHM13 fixes this."],
+  ];
+  $("#locusCards").innerHTML = info.map(([k, t, tag, txt]) => `<div class="lcard"><b>${t}</b><span class="tag">${tag}</span><p>${txt}</p><button type="button" data-locus="${k}">Show the reads (step 2) →</button></div>`).join("");
+  $("#locusCards").querySelectorAll("button").forEach((b) => (b.onclick = () => { state.locus = b.dataset.locus; segButtons("#locusSeg", LOCI, "locus", drawTracks); drawTracks();
+    if (D.pangraph?.[b.dataset.locus]) { state.pg = b.dataset.locus; segButtons("#pgSeg", Object.keys(D.pangraph).map((k) => [k, k === "SMN" ? "SMN1 / SMN2" : "α-globin"]), "pg", drawPangraph); drawPangraph(); }
+    document.getElementById("step2").scrollIntoView({ behavior: "smooth" }); }));
+}
+function pickSample(id) { state.sample = id; $("#sampleSearch").value = ""; fillSamples(); drawTracks(); drawCard(); drawPangraph(); }
+function shortcuts() {
+  const groups = [["SMA carrier (SMN1 = 1)", (t) => t.SMN1 === 1], ["SMN1 = 4", (t) => t.SMN1 >= 4], ["no SMN2", (t) => t.SMN2_all === 0],
+    ["α-globin deletion (≤ 3)", (t) => t.HBA_total <= 3], ["α-globin gain (≥ 5)", (t) => t.HBA_total >= 5]];
+  let h = "<span>Jump to:</span>";
+  for (const [lab, f] of groups) { const hits = browsable.filter((s) => f(truthOf(s.id))).map((s) => s.id); if (hits.length) h += `<button type="button" data-ids="${hits.join(",")}">${lab} · ${hits.length}</button>`; }
+  const dis = browsable.filter((s) => { const t = truthOf(s.id), d = s.dragen?.["4.2.7"]; if (!d || t.SMN1 == null) return false;
+    return +d.SMN1_CN !== t.SMN1 || (+d.SMN2_CN + (+d.SMN2_del78_CN || 0)) !== t.SMN2_all || (t.HBA_total != null && d.HBA_total_copies && +d.HBA_total_copies !== t.HBA_total); }).map((s) => s.id);
+  if (dis.length) h += `<button type="button" data-ids="${dis.join(",")}">truth ≠ DRAGEN · ${dis.length}</button>`;
+  $("#chips").innerHTML = h;
+  $("#chips").querySelectorAll("button").forEach((b) => { let i = 0; b.onclick = () => { const ids = b.dataset.ids.split(","); pickSample(ids[i++ % ids.length]); }; b.title = "click again for the next person"; });
+}
+function stepNav() {
+  const links = [...document.querySelectorAll("#stepnav a")];
+  const io = new IntersectionObserver((es) => { for (const e of es) if (e.isIntersecting) links.forEach((a) => a.classList.toggle("active", a.getAttribute("href") === "#" + e.target.id)); }, { rootMargin: "-40% 0px -55% 0px" });
+  document.querySelectorAll("section.step").forEach((s) => io.observe(s));
 }
 // ---------------------------------------------------------------- sample card
 function drawCard() {
@@ -542,7 +727,7 @@ function drawPangraph() {
     }
     const tt = el("text", { x: x(r.length) + 8, y: y + 3.5 }, g); tt.textContent = r.truth;
     if (byId[sid]) g.addEventListener("click", () => { state.sample = sid; fillSamples($("#sampleSearch").value); drawTracks(); drawCard(); drawPangraph();
-      document.getElementById("h-locus").scrollIntoView({ behavior: "smooth" }); });
+      document.getElementById("step4").scrollIntoView({ behavior: "smooth" }); });
   });
   const ax = el("text", { x: padL, y: rows.length * rowH + 26 }, svg); ax.textContent = `0 … ${(maxL / 1e3).toFixed(0)} kb from the left unique anchor (paths oriented like GRCh38)`;
   $("#pgImg1").src = G.odgi_1d || ""; $("#pgImg2").src = G.odgi_2d || "";
@@ -555,9 +740,11 @@ facts();
 segButtons("#locusSeg", LOCI, "locus", drawTracks);
 segButtons("#refSeg", Object.keys(D.caller).map((r) => [r, REFNAME[r]]), "ref", runLab);
 segButtons("#tgtSeg", [["SMN1", "SMN1"], ["SMN2_all", "SMN2 incl. Δ7-8"], ["SMN_total", "SMN total"], ["HBA_total", "α-globin total"]], "target", drawScore);
+segButtons("#subSeg", [["all", "All people"], ["atypical", "Atypical people only"]], "subset", drawScore);
+locusCards(); shortcuts(); stepNav();
 fillSamples();
 $("#sampleSel").onchange = (e) => { state.sample = e.target.value; drawTracks(); drawCard(); drawPangraph(); };
-$("#sampleSearch").oninput = (e) => { fillSamples(e.target.value); state.sample = $("#sampleSel").value; drawTracks(); drawCard(); };
+$("#sampleSearch").oninput = (e) => { fillSamples(e.target.value); state.sample = $("#sampleSel").value; drawTracks(); drawCard(); drawPangraph(); };
 for (const id of ["#sEps", "#sEff", "#sConc", "#sDepth", "#cPrior"]) $(id).addEventListener("input", runLab);
 caveats(); drawTracks(); runLab();
 if (state.pg) segButtons("#pgSeg", Object.keys(D.pangraph).map((k) => [k, k === "SMN" ? "SMN1 / SMN2" : "α-globin"]), "pg", drawPangraph);
