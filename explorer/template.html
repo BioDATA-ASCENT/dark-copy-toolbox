@@ -183,9 +183,8 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
       <li><a href="#step2"><span class="n">2</span>Reads on a reference</a></li>
       <li><a href="#step3"><span class="n">3</span>The pangenome</a></li>
       <li><a href="#step4"><span class="n">4</span>One person</a></li>
-      <li><a href="#step5"><span class="n">5</span>Call copies yourself</a></li>
-      <li><a href="#step6"><span class="n">6</span>Compare methods</a></li>
-      <li><a href="#step7"><span class="n">7</span>Genotype a patient</a></li>
+      <li><a href="#step6"><span class="n">5</span>Compare methods</a></li>
+      <li><a href="#step7"><span class="n">6</span>Genotype a patient</a></li>
       <li><a href="#info"><span class="n">?</span>Caveats &amp; glossary</a></li>
     </ol>
     <div class="person">
@@ -276,10 +275,9 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
   <section class="step" id="step4" aria-labelledby="h-sample">
     <div class="step-head"><span class="badge">Step 4</span><h2 id="h-sample">One person, every answer · <span id="cardName" class="mono"></span></h2></div>
     <div class="explain">
-      <div><h4>What you're looking at</h4><p>For the selected person: the copy numbers in their own assembly (truth), the answers of the paralog-aware callers (DRAGEN ×3, ctyper ×2), and our open Bayesian caller's full uncertainty.</p></div>
+      <div><h4>What you're looking at</h4><p>For the selected person: the copy numbers in their own assembly (truth) next to the answers of the paralog-aware callers (DRAGEN ×3, ctyper on GRCh38- and CHM13-aligned reads).</p></div>
       <div><h4>How to read it</h4><ul>
         <li>Numbers are whole-genome counts (both chromosomes): SMN1 = 2 is typical, 1 = SMA carrier.</li>
-        <li><b>Heatmap</b>: how likely each SMN1 × SMN2 combination is. Darker means more likely, and the orange ring marks the truth.</li>
         <li>Use the shortcuts to jump to people where methods tend to disagree.</li></ul></div>
     </div>
     <div class="panel">
@@ -289,38 +287,9 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
     <div class="takeaway"><b>Key message</b> For most people every method agrees. Differences show up in the unusual cases (carriers, 4 copies, α-globin deletions), and sometimes the assembly itself is wrong (HG00253).</div>
   </section>
 
-  <!-- ============================================================ STEP 5 -->
-  <section class="step" id="step5" aria-labelledby="h-lab">
-    <div class="step-head"><span class="badge">Step 5</span><h2 id="h-lab">Call copy numbers yourself</h2></div>
-    <div class="explain">
-      <div><h4>What you're looking at</h4><p>Our open Bayesian caller (v0) running live in your browser on all 650 people. It combines two clues: <b>total depth</b> says how many SMN1+SMN2 copies there are together, and the <b>fraction of SMN1-like reads at the twin-specific positions</b> says how they split.</p></div>
-      <div><h4>The knobs</h4><ul>
-        <li><b>site error ε</b>: how often a read shows the other twin's letter by mistake.</li>
-        <li><b>independent sites</b>: how many of the ~16 twin-specific positions count as separate evidence (they're close together, so far fewer than 16).</li>
-        <li><b>allele-fraction concentration</b>: how tightly the read fraction follows the true copy ratio.</li>
-        <li><b>depth weight</b>: how much to trust depth. <b>Prior</b>: genotype frequencies in the other people (from DRAGEN).</li></ul></div>
-    </div>
-    <div class="panel">
-      <div class="controls">
-        <div class="seg" role="group" aria-label="Reference" id="refSeg"></div>
-        <label class="ctl" for="sEps">site error ε <input type="range" id="sEps" min="0.001" max="0.05" step="0.001" value="0.01"><span class="mono" id="vEps"></span></label>
-        <label class="ctl" for="sEff">independent sites <input type="range" id="sEff" min="0" max="16" step="0.5" value="3"><span class="mono" id="vEff"></span></label>
-        <label class="ctl" for="sConc">allele-fraction concentration <input type="range" id="sConc" min="10" max="1000" step="10" value="150"><span class="mono" id="vConc"></span></label>
-        <label class="ctl" for="sDepth">depth weight <input type="range" id="sDepth" min="0" max="2" step="0.1" value="1"><span class="mono" id="vDepth"></span></label>
-        <label class="ctl" for="cPrior"><input type="checkbox" id="cPrior" checked> population prior (DRAGEN 4.2.7, leave-one-out)</label>
-      </div>
-      <div class="statrow" id="labStats"></div>
-      <div class="grid2">
-        <div class="sub"><h3>SMN1: called vs truth</h3><p class="note">Rows = truth, columns = call. Green cells are correct, red cells are errors.</p><div class="scroll" id="confSMN"></div></div>
-        <div class="sub"><h3>Is the caller's confidence honest?</h3><p class="note">Each dot groups people by the caller's stated confidence (x) and plots how often it was actually right (y). On the dashed line, confidence is honest.</p><div id="relPlot"></div></div>
-      </div>
-    </div>
-    <div class="takeaway"><b>Key message</b> A simple, transparent model gets about 94–95% of people right from depth plus a few twin-specific positions. Switch the prior off to see what the reads alone can do: α-globin drops the most.</div>
-  </section>
-
   <!-- ============================================================ STEP 6 -->
   <section class="step" id="step6" aria-labelledby="h-score">
-    <div class="step-head"><span class="badge">Step 6</span><h2 id="h-score">Compare all methods against the truth</h2></div>
+    <div class="step-head"><span class="badge">Step 5</span><h2 id="h-score">Compare all methods against the truth</h2></div>
     <div class="explain">
       <div><h4>What the percentage means</h4><p>The share of people for whom the method's copy number <b>exactly</b> equals the assembly truth (whole-genome count, both chromosomes; off by one counts as wrong). Only people with a complete assembly at that region are counted.</p></div>
       <div><h4>How to read it</h4><ul>
@@ -338,18 +307,19 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
       <details><summary>Table view</summary><div class="scroll" id="scoreTable"></div></details>
       <div class="notrun"><b>Not run: Locityper.</b> Excluded by design. It aligns reads to candidate haplotypes, and this project does no read mapping. Its public database also has no SMN or HBA locus, and SMN would need a 1–3 Mb locus (see step 3).</div>
     </div>
-    <div class="takeaway"><b>Key message</b> Paralog-aware callers that use twin-specific signals (DRAGEN; ctyper's k-mers; our Bayes v0) count SMN correctly in 91–99.5% of people. Counting confident reads alone (MAPQ ≥ 20) gets almost nobody right, and counting all reads is no better than guessing.</div>
+    <div class="takeaway"><b>Key message</b> Paralog-aware callers that use twin-specific signals (DRAGEN's targeted callers, ctyper's pangenome k-mers) count SMN1 correctly in 91–99.5% of people. Counting confident reads alone (MAPQ ≥ 20) gets almost nobody right, and counting all reads is no better than guessing.</div>
   </section>
 
   <!-- ============================================================ STEP 7 -->
   <section class="step" id="step7" aria-labelledby="h-pt">
-    <div class="step-head"><span class="badge">Step 7</span><h2 id="h-pt">Genotype a patient: no alignment needed</h2></div>
+    <div class="step-head"><span class="badge">Step 6</span><h2 id="h-pt">Genotype a patient: no alignment needed</h2></div>
     <div class="explain">
-      <div><h4>What you're looking at</h4><p>Three simulated patients, each made of two real HPRC SMN haplotypes with known copy numbers, sequenced in silico with low-coverage 150 bp reads. We genotype them <b>without aligning a single read</b>: the browser scans every read for short marker sequences (31-mers) and feeds the counts to the same Bayesian model as step 5. You can also drop in your own FASTQ.</p></div>
+      <div><h4>What you're looking at</h4><p>Three simulated patients, each made of two real HPRC SMN haplotypes with known copy numbers, sequenced in silico with low-coverage 150 bp reads. We genotype them <b>without aligning a single read</b>: the browser scans every read for short marker sequences (31-mers) and turns the counts into copy numbers with two simple ratios. You can also drop in your own FASTQ.</p></div>
       <div><h4>The three counts</h4><ul>
         <li><b>Control reads</b>: reads containing a MARVELD2 marker, a single-copy gene, so they tell us what 2 copies look like at this coverage.</li>
         <li><b>SMN reads</b>: reads containing a marker shared by SMN1 and SMN2. SMN reads ÷ control reads × 2 ≈ total SMN copies.</li>
-        <li><b>Twin-site reads</b>: at each of the 13 positions where the twins differ, does the read carry the SMN1 or the SMN2 letter? The SMN1 share says how the total splits.</li></ul></div>
+        <li><b>Twin-site reads</b>: at each of the 13 positions where the twins differ, does the read carry the SMN1 or the SMN2 letter? The SMN1 share says how the total splits.</li>
+        <li><b>The call</b>: total = round(2 × SMN reads ÷ control reads, adjusted for gene length); SMN1 = round(total × SMN1 share); SMN2 = the rest.</li></ul></div>
     </div>
     <div class="panel">
       <div class="controls">
@@ -360,7 +330,7 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
       <div class="drop" id="drop"><b>Try your own reads:</b> drop a FASTQ or FASTQ.gz of the SMN region here, or <label class="filebtn">choose a file<input type="file" id="fqFile" accept=".fq,.fastq,.gz" hidden></label>. It is read locally in your browser; nothing is uploaded.<span id="fqStatus" class="mono"></span></div>
       <div class="grid2" id="ptResult"></div>
     </div>
-    <div class="takeaway"><b>Key message</b> With a handful of k-mers and no alignment, even 5x reads are enough to separate an SMA patient (no SMN1), a carrier (1) and an unaffected person (2): simulation calls were exact in 60/60 runs at 10x, 59/60 at 5x and 53/60 at 2x. The control gene keeps the depth honest, and the twin sites do the rest.</div>
+    <div class="takeaway"><b>Key message</b> With a handful of k-mers and no alignment, even 5x reads are enough to separate an SMA patient (no SMN1), a carrier (1) and an unaffected person (2): simulation calls were exact in 60/60 runs at 10x, 58/60 at 5x and 48/60 at 2x. The control gene keeps the depth honest, and the twin sites do the rest.</div>
   </section>
 
   <!-- ============================================================ CAVEATS -->
@@ -404,7 +374,7 @@ function facts() {
   const nt = samples.filter((s) => s.truth).length;
   const us = samples.filter((s) => s.truth && s.truth.usable_SMN === "True").length;
   const uh = samples.filter((s) => s.truth && s.truth.usable_HBA === "True").length;
-  const nsl = Object.keys(D.caller.grch38 || {}).length;
+  const nsl = D.meta.n_sliced_both;
   $("#facts").innerHTML = `<span><b>${D.meta.n_selected}</b> 1kGP samples selected</span><span><b>${nsl}</b> sliced on both references</span>` +
     `<span><b>${nt}</b> with HPRC R2 assembly truth</span><span><b>${us}</b> usable for SMN · <b>${uh}</b> for HBA</span>`;
 }
@@ -620,51 +590,6 @@ function drawTracks() {
   drawMqCurve();
 }
 
-// ---------------------------------------------------------------- caller (mirror of caller/bayes_cn.py)
-const LG = (() => { const g = 7, c = [0.99999999999980993, 676.5203681218851, -1259.1392167224028, 771.32342877765313, -176.61502916214059, 12.507343278686905, -0.13857109526572012, 9.9843695780195716e-6, 1.5056327351493116e-7];
-  const f = (x) => { if (x < 0.5) return Math.log(Math.PI / Math.abs(Math.sin(Math.PI * x))) - f(1 - x); x -= 1; let a = c[0]; const t = x + g + 0.5; for (let i = 1; i < g + 2; i++) a += c[i] / (x + i); return 0.5 * Math.log(2 * Math.PI) + (x + 0.5) * Math.log(t) - t + Math.log(a); }; return f; })();
-const lbeta = (a, b) => LG(a) + LG(b) - LG(a + b);
-const nbLogpmf = (k, n, p) => LG(k + n) - LG(n) - LG(k + 1) + n * Math.log(p) + k * Math.log1p(-p);
-const bbLogpmf = (x, n, a, b) => LG(n + 1) - LG(x + 1) - LG(n - x + 1) + lbeta(x + a, n - x + b) - lbeta(a, b);
-const median = (a) => { const s = a.slice().sort((x, y) => x - y); const m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
-
-function priors(excl) {
-  const smn = Array.from({ length: 6 }, () => Array(6).fill(0.5)), hba = Array(11).fill(0.5);
-  for (const s of samples) {
-    if (s.id === excl) continue; const d = s.dragen?.["4.2.7"]; if (!d) continue;
-    const a = parseInt(d.SMN1_CN), b = parseInt(d.SMN2_CN); if (a < 6 && b < 6) smn[a][b] += 1;
-    const t = parseInt(d.HBA_total_copies); if (t <= 10) hba[t] += 1;
-  }
-  const S = smn.flat().reduce((x, y) => x + y), H = hba.reduce((x, y) => x + y);
-  return { SMN: smn.map((r) => r.map((v) => Math.log(v / S))), HBA: Array.from({ length: 6 }, (_, a) => Array.from({ length: 6 }, (_, b) => Math.log(hba[a + b] / H) - Math.log(a + b + 1))) };
-}
-function callAll(ref, prm) {
-  const C = D.caller[ref] || {}; const out = {};
-  const calib = {}; for (const fam of ["SMN", "HBA"]) { const v = Object.values(C).filter((e) => e[fam]).map((e) => e[fam].sum_norm); calib[fam] = v.length ? median(v) / 4 : 1; }
-  for (const [s, e] of Object.entries(C)) {
-    const pr = prm.prior ? priors(s) : null; out[s] = {};
-    for (const fam of ["SMN", "HBA"]) {
-      const f = e[fam]; if (!f) continue;
-      const cHat = f.sum_norm / calib[fam], lam = 0.5 * f.L / 150 * 30;
-      const cv2 = f.cv2 == null ? 0.0025 : f.cv2 * (2000 / f.L) + 0.0009;
-      const k = Math.max(0, Math.round(cHat * lam));
-      const shrink = f.nsites ? Math.min(1, prm.eff / f.nsites) : 0, nE = Math.round(f.N * shrink), xE = Math.round(f.X * shrink);
-      const lp = []; let mx = -Infinity;
-      for (let a = 0; a < 6; a++) { lp.push([]); for (let b = 0; b < 6; b++) {
-        const mu = Math.max(0.05, a + b) * lam, v = Math.max(mu * 1.0001, mu + cv2 * mu * mu);
-        let ll = prm.wd * nbLogpmf(k, mu * mu / (v - mu), mu / v);
-        if (a + b > 0 && nE > 0) { const p = (a * (1 - prm.eps) + b * prm.eps) / (a + b); ll += bbLogpmf(xE, nE, p * prm.conc, (1 - p) * prm.conc); }
-        if (pr) ll += pr[fam][a][b]; lp[a].push(ll); if (ll > mx) mx = ll; } }
-      let Z = 0; const post = lp.map((r) => r.map((v) => { const x = Math.exp(v - mx); Z += x; return x; }));
-      post.forEach((r) => r.forEach((_, j) => (r[j] /= Z)));
-      let bi = 0, bj = 0; post.forEach((r, i) => r.forEach((v, j) => { if (v > post[bi][bj]) { bi = i; bj = j; } }));
-      const tot = Array(11).fill(0); post.forEach((r, i) => r.forEach((v, j) => (tot[i + j] += v)));
-      const mt = tot.indexOf(Math.max(...tot));
-      out[s][fam] = { post, A: bi, B: bj, pmap: post[bi][bj], total: mt, ptotal: tot[mt], cHat };
-    }
-  }
-  return out;
-}
 function truthOf(s) {
   const t = byId[s]?.truth; if (!t) return {};
   const o = {};
@@ -673,61 +598,11 @@ function truthOf(s) {
   const ck = D.control?.truth?.[s]; if (ck != null) o[`CONTROL_${D.control.gene}`] = ck;
   return o;
 }
-let LAST = null;
-function runLab() {
-  const prm = { eps: +$("#sEps").value, eff: +$("#sEff").value, conc: +$("#sConc").value, wd: +$("#sDepth").value, prior: $("#cPrior").checked };
-  $("#vEps").textContent = prm.eps.toFixed(3); $("#vEff").textContent = prm.eff; $("#vConc").textContent = prm.conc; $("#vDepth").textContent = prm.wd.toFixed(1);
-  const res = callAll(state.ref, prm); LAST = res;
-  const sc = { SMN1: [0, 0], SMN2_all: [0, 0], SMN_total: [0, 0], HBA_total: [0, 0] }; const rel = []; const conf = {}; let brier = 0, nb = 0;
-  for (const [s, r] of Object.entries(res)) {
-    const t = truthOf(s);
-    if (r.SMN && t.SMN1 != null) {
-      sc.SMN1[0]++; sc.SMN1[1] += r.SMN.A === t.SMN1; sc.SMN2_all[0]++; sc.SMN2_all[1] += r.SMN.B === t.SMN2_all;
-      sc.SMN_total[0]++; sc.SMN_total[1] += r.SMN.total === t.SMN_total;
-      rel.push([r.SMN.pmap, r.SMN.A === t.SMN1 && r.SMN.B === t.SMN2_all]);
-      const key = `${t.SMN1}|${r.SMN.A}`; conf[key] = (conf[key] || 0) + 1;
-      const pA = r.SMN.post.map((row) => row.reduce((x, y) => x + y)); brier += pA.reduce((acc, p, k) => acc + (p - (k === t.SMN1)) ** 2, 0); nb++;
-    }
-    if (r.HBA && t.HBA_total != null) { sc.HBA_total[0]++; sc.HBA_total[1] += r.HBA.total === t.HBA_total; }
-  }
-  window.BAYES = sc;
-  const pct = (x) => x[0] ? (100 * x[1] / x[0]).toFixed(1) + "%" : "–";
-  $("#labStats").innerHTML = [["SMN1 exact", sc.SMN1], ["SMN2 incl. Δ7-8 exact", sc.SMN2_all], ["SMN total exact", sc.SMN_total], ["α-globin total exact", sc.HBA_total]]
-    .map(([l, x]) => `<div class="stat"><span class="lab">${l} · ${REFNAME[state.ref]}</span><span class="bignum">${pct(x)}</span><span class="lab mono">${x[1]} / ${x[0]} samples</span></div>`).join("") +
-    `<div class="stat"><span class="lab">SMN1 Brier score (lower is better)</span><span class="bignum">${nb ? (brier / nb).toFixed(3) : "–"}</span><span class="lab mono">${nb} samples</span></div>`;
-  // confusion table
-  const vals = [0, 1, 2, 3, 4, 5];
-  let h = `<table><thead><tr><th>truth ↓ / called →</th>${vals.map((v) => `<th class="num">${v}</th>`).join("")}</tr></thead><tbody>`;
-  for (const t of vals) { const row = vals.map((c) => conf[`${t}|${c}`] || 0); if (!row.some(Boolean)) continue;
-    h += `<tr><td class="mono">SMN1 = ${t}</td>${row.map((n, c) => `<td class="num" style="${n ? `background:${c === t ? "color-mix(in srgb, var(--good) 22%, transparent)" : "color-mix(in srgb, var(--bad) 22%, transparent)"}` : "color:var(--muted)"}">${n || "·"}</td>`).join("")}</tr>`; }
-  $("#confSMN").innerHTML = h + "</tbody></table>";
-  drawReliability(rel); drawScore(); drawCard();
-}
-function drawReliability(rel) {
-  const host = $("#relPlot"); host.innerHTML = "";
-  const W = 420, H = 260, M = 40; const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "Reliability plot" }, host);
-  const X = (v) => M + v * (W - M - 10), Y = (v) => H - 30 - v * (H - 40);
-  for (const v of [0, 0.25, 0.5, 0.75, 1]) {
-    el("line", { x1: X(0), x2: X(1), y1: Y(v), y2: Y(v), stroke: css("--rule"), "stroke-width": 0.7 }, svg);
-    el("text", { x: M - 6, y: Y(v) + 3.5, "text-anchor": "end" }, svg).textContent = v;
-    el("text", { x: X(v), y: H - 14, "text-anchor": "middle" }, svg).textContent = v;
-  }
-  el("line", { x1: X(0), y1: Y(0), x2: X(1), y2: Y(1), stroke: css("--axis"), "stroke-dasharray": "4 3" }, svg);
-  el("text", { x: X(0.5), y: H - 1, "text-anchor": "middle" }, svg).textContent = "posterior of the called genotype";
-  const edges = [0, 0.5, 0.7, 0.9, 0.99, 1.0001]; const pts = [];
-  for (let i = 0; i < edges.length - 1; i++) { const b = rel.filter(([p]) => p >= edges[i] && p < edges[i + 1]); if (!b.length) continue;
-    pts.push([b.reduce((a, [p]) => a + p, 0) / b.length, b.filter(([, ok]) => ok).length / b.length, b.length]); }
-  if (pts.length > 1) el("polyline", { points: pts.map(([x, y]) => `${X(x)},${Y(y)}`).join(" "), fill: "none", stroke: css("--mq0"), "stroke-width": 2 }, svg);
-  for (const [x, y, n] of pts) {
-    el("circle", { cx: X(x), cy: Y(y), r: 4 + Math.sqrt(n) / 2, fill: css("--mq0"), stroke: css("--surface"), "stroke-width": 2 }, svg);
-    el("text", { x: X(x) + 9, y: Y(y) + 14, style: `fill:${css("--ink-2")}` }, svg).textContent = `n=${n}`;
-  }
-}
 // ---------------------------------------------------------------- scoreboard
 const MLAB = (m) => m.replace("naive_grch38_mq0", "Naive depth · GRCh38 · MAPQ≥0").replace("naive_grch38_mq20", "Naive depth · GRCh38 · MAPQ≥20")
   .replace("naive_chm13_mq0", "Naive depth · CHM13 · MAPQ≥0").replace("naive_chm13_mq20", "Naive depth · CHM13 · MAPQ≥20")
   .replace(/^dragen_4\.0\.3$/, "DRAGEN 4.0.3 · graph hg38").replace(/^dragen_4\.2\.7$/, "DRAGEN 4.2.7 · graph hg38 v3").replace(/^dragen_4\.4\.7$/, "DRAGEN 4.4.7 · multigenome")
-  .replace(/^ctyper_grch38$/, "ctyper 1.0.5 · k-mers, GRCh38-slice reads").replace(/^ctyper_chm13$/, "ctyper 1.0.5 · k-mers, CHM13-slice reads").replace(/^bayes_(.*)$/, "Bayes v0 (offline run: $1)");
+  .replace(/^ctyper_grch38$/, "ctyper 1.0.5 · k-mers, GRCh38-slice reads").replace(/^ctyper_chm13$/, "ctyper 1.0.5 · k-mers, CHM13-slice reads");
 const TGT_COMMON = {};
 function wilson(k, n) { if (!n) return [0, 0]; const z = 1.96, p = k / n, d = 1 + z * z / n, c = (p + z * z / (2 * n)) / d, h = z * Math.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d; return [Math.max(0, c - h), Math.min(1, c + h)]; }
 function drawScore() {
@@ -741,9 +616,6 @@ function drawScore() {
     return { n, ok, over, under }; };
   const rows = [];
   for (const [m, byT] of Object.entries(D.calls || {})) { const c = byT[tgt]; if (!c) continue; const r = score(c); if (r.n) rows.push({ m: MLAB(m), ...r }); }
-  if (LAST && !tgt.startsWith("CONTROL_")) { const c = {}; for (const [sid, r] of Object.entries(LAST)) { const fam = tgt === "HBA_total" ? "HBA" : "SMN"; const x = r[fam]; if (!x) continue;
-      c[sid] = tgt === "SMN1" ? x.A : tgt === "SMN2_all" ? x.B : x.total; }
-    const r = score(c); if (r.n) rows.push({ m: `Bayes v0 · ${REFNAME[state.ref]} · live settings (step 5)`, ...r, live: true }); }
   const nAll = Object.keys(truthBy).filter(keep).length;
   const base = state.subset === "all" ? (cnt[common] || 0) / Math.max(1, nAll) : 0;
   rows.sort((a, b) => b.ok / b.n - a.ok / a.n);
@@ -823,24 +695,6 @@ function drawCard() {
     return `<tr><td class="mono">ctyper · ${REFNAME[rf]} reads</td><td class="num">${c.SMN1}</td><td class="num">${c.SMN2}</td><td class="num">${c.SMN_partial}</td><td class="mono">${c.HBA_alleles} allele${c.HBA_alleles == 1 ? "" : "s"}</td><td class="num">${c.HBA_total}</td></tr>`; }).join("");
   box("Paralog-aware callers", `<div class="scroll"><table><thead><tr><th>caller</th><th class="num">SMN1</th><th class="num">SMN2</th><th class="num">Δ7-8</th><th>HBA</th><th class="num">α total</th></tr></thead><tbody>${rows.replace(/<td class="mono">(4\.\d\.\d)<\/td>/g, '<td class="mono">DRAGEN $1</td>')}${crows}</tbody></table></div>` +
     (s.ctyper ? `<p class="note">ctyper: k-mer genotyping against HPRC/CPC/HGSVC pangenome alleles, run here on the region slices. Δ7-8 column = SMN alleles with only part of the transcript.</p>` : ""));
-  const r = LAST?.[s.id];
-  if (r?.SMN) {
-    const d = document.createElement("div"); d.className = "sub"; d.innerHTML = `<h3>Bayes v0 posterior · SMN1 × SMN2 · ${REFNAME[state.ref]}</h3>`; host.appendChild(d);
-    const cell = 30, M = 30, svg = el("svg", { viewBox: `0 0 ${M + 6 * cell + 10} ${M + 6 * cell + 24}`, role: "img", "aria-label": "posterior grid", style: "max-width:260px" }, d);
-    const steps = ["--seq-0", "--seq-1", "--seq-2", "--seq-3", "--seq-4", "--seq-5"]; const tt = truthOf(s.id);
-    for (let a = 0; a < 6; a++) for (let b = 0; b < 6; b++) {
-      const p = r.SMN.post[a][b]; const k = p < 0.001 ? 0 : p < 0.01 ? 1 : p < 0.1 ? 2 : p < 0.5 ? 3 : p < 0.9 ? 4 : 5;
-      const rc = el("rect", { x: M + b * cell, y: M + a * cell, width: cell - 2, height: cell - 2, rx: 3, fill: css(steps[k]) }, svg);
-      el("title", {}, rc).textContent = `SMN1=${a}, SMN2=${b}: ${(100 * p).toFixed(2)}%`;
-      if (tt.SMN1 === a && tt.SMN2_all === b) el("rect", { x: M + b * cell + 1, y: M + a * cell + 1, width: cell - 4, height: cell - 4, rx: 2, fill: "none", stroke: css("--mq20"), "stroke-width": 2.5 }, svg);
-    }
-    for (let i = 0; i < 6; i++) { el("text", { x: M + i * cell + cell / 2 - 1, y: M - 6, "text-anchor": "middle" }, svg).textContent = i; el("text", { x: M - 8, y: M + i * cell + cell / 2 + 3, "text-anchor": "end" }, svg).textContent = i; }
-    el("text", { x: M + 3 * cell, y: 10, "text-anchor": "middle" }, svg).textContent = "SMN2 (incl. Δ7-8) →";
-    el("text", { x: M, y: M + 6 * cell + 16 }, svg).textContent = "rows: SMN1 · orange ring = truth";
-    const p = document.createElement("p"); p.className = "note mono";
-    p.textContent = `call ${r.SMN.A}+${r.SMN.B} (p=${r.SMN.pmap.toFixed(3)}) · depth-implied total ${r.SMN.cHat.toFixed(2)}` + (r.HBA ? ` · α-globin call ${r.HBA.total} (p=${r.HBA.ptotal.toFixed(3)})` : "");
-    d.appendChild(p);
-  }
 }
 function caveats() {
   const items = [
@@ -848,7 +702,6 @@ function caveats() {
     "Locityper is labelled 'not run' on purpose: it aligns reads internally (this project does no read mapping), its public database (326 loci) has no SMN1/SMN2 or HBA1/HBA2 locus, and the SMN duplication block is 1–3 Mb and differs between haplotypes. Its precomputed tables only cover the chr21 CBS demo (data/tables/locityper_*.tsv). The pangenome graphs in this page were built from assemblies for illustration; no reads were aligned to them.",
     "Naive depth uses per-gene normalised depth rounded to the nearest integer with no GC or mappability correction; it is the baseline, not a straw man for read-depth callers in general.",
     "DRAGEN 4.4.7 results are labelled 'multigenome' after the bucket's reference name (hg38-alt_masked.cnv.graph…); DRAGEN targeted callers are paralog-aware and use their own internal normalisation.",
-    "The Bayes v0 prior comes from DRAGEN 4.2.7 calls on the other 1kGP samples here, so with the prior on it partly inherits DRAGEN's errors. Its depth calibration assumes the median sample carries 4 copies per family (no truth used).",
     "Assembly truth agrees with DRAGEN 4.2.7 on 201/206 SMN samples and 220/221 α-globin samples; the 6 samples that disagree are listed in data/tables/truth_crosscheck.tsv. ctyper's precomputed allele table is not scored on its own (it only covers assemblies, not 1kGP reads).",
     "ctyper (pangenome k-mer genotyper) was run here on the region slices with each sample's measured depth, not on whole CRAMs: reads aligned elsewhere (e.g. ~5% of SMN reads sit on GRCh38 alt contig KI270897v1) are missing. Its depth input is the haploid 31-mer depth (diploid read depth × 120/150 ÷ 2), calibrated on 5 truth samples. Its pangenome panel includes some HPRC samples, so a few truth samples are not independent tests for ctyper.",
   ];
@@ -898,7 +751,7 @@ function drawPangraph() {
     ? "Haplotypes differ by up to ~2 Mb in length and in the order, orientation and number of SMN/NAIP/SERF1/GTF2H2 copies. A linear reference can only hold one of these layouts, and the graph has to fold all copies onto shared nodes, so neither tells you directly which copy a short read came from."
     : "Most haplotypes carry HBA2+HBA1 (2 copies); the −α3.7/−α4.2 deletions leave one, and triplications add one. HG00253#2 walks the whole HBZ–HBQ1 block twice (~150 kb), but its reads show normal HBZ depth (2.03 copies), which points to a false duplication in that assembly: truth says 6 copies, DRAGEN says 4.";
 }
-// ---------------------------------------------------------------- step 7: simulated patients (alignment-free)
+// ---------------------------------------------------------------- step 6 (id step7): simulated patients (alignment-free)
 state.cov = String(D.sim ? D.sim.patients[0].coverage : 10); state.pt = null;
 function rcomp(x) { let o = ""; for (let i = x.length - 1; i >= 0; i--) o += { A: "T", C: "G", G: "C", T: "A" }[x[i]] || "N"; return o; }
 let PLUT = null;
@@ -913,17 +766,13 @@ function mulberry(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = 
 function summariseHits(hits, frac, seed = 11) { const r = mulberry(seed); let Rc = 0, Rg = 0, X = 0, N = 0;
   for (const [c, g, st] of hits) { if (frac < 1 && r() > frac) continue; Rc += c; Rg += g; for (const v of Object.values(st)) { N++; if (v === "A") X++; } }
   return { Rc, Rg, X, N }; }
-function genotypeCounts(cnt) { const P = D.sim.panel, ns = Object.keys(P.sites).length, eps = 0.01, eff = 3, conc = 150, size = 200;
-  const per = cnt.Rc / 2 * P.L.gene / P.L.ctrl; const xE = Math.round(cnt.X * eff / ns), nE = Math.round(cnt.N * eff / ns);
-  const lp = []; let mx = -Infinity;
-  for (let a = 0; a < 6; a++) { lp.push([]); for (let b = 0; b < 6; b++) { const mu = Math.max(0.05, a + b) * per;
-    let ll = nbLogpmf(cnt.Rg, size, size / (size + mu)); if (a + b > 0 && nE > 0) { const p = (a * (1 - eps) + b * eps) / (a + b); ll += bbLogpmf(xE, nE, p * conc, (1 - p) * conc); }
-    lp[a].push(ll); if (ll > mx) mx = ll; } }
-  let Z = 0; const post = lp.map((r) => r.map((v) => { const x = Math.exp(v - mx); Z += x; return x; })); post.forEach((r) => r.forEach((_, j) => (r[j] /= Z)));
-  let A = 0, B = 0; post.forEach((r, i) => r.forEach((v, j) => { if (v > post[A][B]) { A = i; B = j; } }));
-  const pS1 = post.map((r) => r.reduce((x, y) => x + y));
-  return { post, A, B, p: post[A][B], pS1, total: per ? cnt.Rg / per : NaN, per }; }
-function verdictOf(A, pS1) { if (A === 0) return ["Consistent with SMA: no SMN1 copy found", "sma"]; if (A === 1) return ["SMA carrier: one SMN1 copy", "carrier"];
+function genotypeCounts(cnt) { // two transparent ratios (no model): total from depth, split from the twin-site letters
+  const P = D.sim.panel; const per = cnt.Rc / 2 * P.L.gene / P.L.ctrl;
+  const total = per ? cnt.Rg / per : NaN, T = Number.isFinite(total) ? Math.max(0, Math.round(total)) : 0;
+  const share = cnt.N ? cnt.X / cnt.N : NaN, A = Number.isFinite(share) ? Math.min(T, Math.round(T * share)) : 0;
+  return { A, B: T - A, T, total, share, per };
+}
+function verdictOf(A) { if (A === 0) return ["Consistent with SMA: no SMN1 copy found", "sma"]; if (A === 1) return ["SMA carrier: one SMN1 copy", "carrier"];
   return [`Not a carrier: ${A} SMN1 copies` + (A === 2 ? " (note: a 2+0 ‘silent carrier’ can't be ruled out from copy number alone)" : ""), "ok"]; }
 function drawPatients() {
   if (!D.sim) { $("#step7").hidden = true; return; }
@@ -938,28 +787,35 @@ function drawPatients() {
 }
 function showGenotype(cnt, title, truth) {
   const r = genotypeCounts(cnt), host = $("#ptResult"); host.innerHTML = "";
-  const [vt, vc] = verdictOf(r.A, r.pS1);
+  const [vt, vc] = verdictOf(r.A);
   const left = document.createElement("div"); left.className = "sub";
   left.innerHTML = `<h3>${title}</h3><div class="verdict ${vc}">${vt}</div>
-    <p class="mono">call SMN1 = ${r.A}, SMN2 = ${r.B} · posterior ${(100 * r.p).toFixed(1)}% · P(SMN1 = 0) = ${(100 * r.pS1[0]).toFixed(1)}%</p>
+    <p class="mono">call SMN1 = ${r.A}, SMN2 = ${r.B}</p>
     ${truth ? `<p class="mono">truth SMN1 = ${truth.SMN1}, SMN2 = ${truth.SMN2} → ${truth.SMN1 === r.A && truth.SMN2 === r.B ? "✓ correct" : "✗ wrong"}</p>` : ""}
     <table><tbody>
       <tr><td>Control reads (MARVELD2, 2 copies)</td><td class="num">${cnt.Rc}</td></tr>
       <tr><td>SMN reads (SMN1 + SMN2)</td><td class="num">${cnt.Rg}</td></tr>
-      <tr><td>→ estimated total SMN copies</td><td class="num">${r.total.toFixed(2)}</td></tr>
-      <tr><td>Twin-site reads with the SMN1 letter</td><td class="num">${cnt.X} / ${cnt.N} (${cnt.N ? (100 * cnt.X / cnt.N).toFixed(0) : "–"}%)</td></tr>
+      <tr><td>→ estimated total SMN copies</td><td class="num">${r.total.toFixed(2)} → ${r.T}</td></tr>
+      <tr><td>Twin-site reads with the SMN1 letter</td><td class="num">${cnt.X} / ${cnt.N} (${cnt.N ? (100 * r.share).toFixed(0) : "–"}%)</td></tr>
+      <tr><td>→ SMN1 = ${r.T} × ${cnt.N ? r.share.toFixed(2) : "–"}</td><td class="num">${(r.T * r.share).toFixed(2)} → ${r.A}</td></tr>
     </tbody></table>
-    <p class="note">${r.A === 0 ? "No reads carry SMN1 letters at the twin sites, while the depth says SMN copies are present: those are all SMN2. More SMN2 copies usually mean milder SMA." : r.A === 1 ? "About a quarter to a third of twin-site reads look like SMN1: one SMN1 copy among the total." : "Roughly half or more of twin-site reads look like SMN1."} The population prior is off here: a healthy-population prior would argue against SMN1 = 0, which is exactly the patient we're looking for.</p>`;
+    <p class="note">${r.A === 0 ? "No reads carry SMN1 letters at the twin sites, while the depth says SMN copies are present: those are all SMN2. More SMN2 copies usually mean milder SMA." : r.A === 1 ? "About a quarter to a third of twin-site reads look like SMN1: one SMN1 copy among the total." : "Roughly half or more of twin-site reads look like SMN1."}</p>`;
   host.appendChild(left);
-  const d = document.createElement("div"); d.className = "sub"; d.innerHTML = `<h3>Posterior · SMN1 × SMN2</h3>`; host.appendChild(d);
-  const cell = 30, M = 30, svg = el("svg", { viewBox: `0 0 ${M + 6 * cell + 10} ${M + 6 * cell + 24}`, role: "img", "aria-label": "patient posterior", style: "max-width:280px" }, d);
-  const steps = ["--seq-0", "--seq-1", "--seq-2", "--seq-3", "--seq-4", "--seq-5"];
-  for (let a = 0; a < 6; a++) for (let b = 0; b < 6; b++) { const p = r.post[a][b], k = p < 0.001 ? 0 : p < 0.01 ? 1 : p < 0.1 ? 2 : p < 0.5 ? 3 : p < 0.9 ? 4 : 5;
-    const rc = el("rect", { x: M + b * cell, y: M + a * cell, width: cell - 2, height: cell - 2, rx: 3, fill: css(steps[k]) }, svg); el("title", {}, rc).textContent = `SMN1=${a}, SMN2=${b}: ${(100 * p).toFixed(2)}%`;
-    if (truth && truth.SMN1 === a && truth.SMN2 === b) el("rect", { x: M + b * cell + 1, y: M + a * cell + 1, width: cell - 4, height: cell - 4, rx: 2, fill: "none", stroke: css("--mq20"), "stroke-width": 2.5 }, svg); }
-  for (let i = 0; i < 6; i++) { el("text", { x: M + i * cell + cell / 2 - 1, y: M - 6, "text-anchor": "middle" }, svg).textContent = i; el("text", { x: M - 8, y: M + i * cell + cell / 2 + 3, "text-anchor": "end" }, svg).textContent = i; }
-  el("text", { x: M + 3 * cell, y: 10, "text-anchor": "middle" }, svg).textContent = "SMN2 →";
-  el("text", { x: M, y: M + 6 * cell + 16 }, svg).textContent = truth ? "rows: SMN1 · orange ring = truth" : "rows: SMN1";
+  // two gauges: estimated total on a 0–6 scale, SMN1 share with the share expected for each SMN1 count at this total
+  const d = document.createElement("div"); d.className = "sub"; d.innerHTML = `<h3>The two numbers behind the call</h3>`; host.appendChild(d);
+  const W = 460, H = 170, ML = 20, MR = 20, svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "copy-number gauges", style: "max-width:520px" }, d);
+  const gauge = (y, label, max, val, ticks, fmt) => {
+    const X = (v) => ML + Math.min(Math.max(v, 0), max) / max * (W - ML - MR);
+    el("text", { x: ML, y: y - 12, style: `fill:${css("--ink-2")};font-family:var(--f-body);font-size:12px` }, svg).textContent = label;
+    el("rect", { x: ML, y, width: W - ML - MR, height: 10, rx: 5, fill: css("--rule") }, svg);
+    for (const [v, lab, hl] of ticks) { el("line", { x1: X(v), x2: X(v), y1: y - 3, y2: y + 13, stroke: css(hl ? "--ink" : "--axis"), "stroke-width": hl ? 2 : 1 }, svg);
+      el("text", { x: X(v), y: y + 26, "text-anchor": "middle", style: hl ? `fill:${css("--ink")};font-weight:600` : "" }, svg).textContent = lab; }
+    if (Number.isFinite(val)) el("circle", { cx: X(val), cy: y + 5, r: 7, fill: css("--mq20"), stroke: css("--surface"), "stroke-width": 2 }, svg);
+    el("text", { x: W - MR, y: y - 12, "text-anchor": "end", style: `fill:${css("--ink")};font-family:var(--f-mono);font-size:12px` }, svg).textContent = fmt(val);
+  };
+  gauge(38, "Total SMN copies (from depth)", 6, r.total, [0, 1, 2, 3, 4, 5, 6].map((v) => [v, String(v), v === r.T]), (v) => v.toFixed(2));
+  gauge(118, `SMN1 share of twin-site reads (expected k/${r.T || "?"} for SMN1 = k)`, 1, r.share,
+    r.T ? Array.from({ length: r.T + 1 }, (_, k) => [k / r.T, `${k}/${r.T}`, k === r.A]) : [], (v) => (Number.isFinite(v) ? `${(100 * v).toFixed(0)}%` : "–"));
 }
 async function readFastq(file) {
   const st = $("#fqStatus"); st.textContent = ` reading ${file.name}…`;
@@ -986,7 +842,6 @@ function initPatients() {
 // ---------------------------------------------------------------- boot
 facts();
 segButtons("#locusSeg", LOCI, "locus", drawTracks);
-segButtons("#refSeg", Object.keys(D.caller).map((r) => [r, REFNAME[r]]), "ref", runLab);
 segButtons("#tgtSeg", [["SMN1", "SMN1"], ["SMN2_all", "SMN2 incl. Δ7-8"], ["SMN_total", "SMN total"], ["HBA_total", "α-globin total"]].concat(D.control?.gene ? [[`CONTROL_${D.control.gene}`, `Control: ${D.control.gene}`]] : []), "target", drawScore);
 segButtons("#subSeg", [["all", "All people"], ["atypical", "Atypical people only"]], "subset", drawScore);
 locusCards(); shortcuts(); stepNav(); initPatients();
@@ -995,10 +850,9 @@ else { $("#sMapq").disabled = true; }
 fillSamples();
 $("#sampleSel").onchange = (e) => { state.sample = e.target.value; drawTracks(); drawCard(); drawPangraph(); };
 $("#sampleSearch").oninput = (e) => { fillSamples(e.target.value); state.sample = $("#sampleSel").value; drawTracks(); drawCard(); drawPangraph(); };
-for (const id of ["#sEps", "#sEff", "#sConc", "#sDepth", "#cPrior"]) $(id).addEventListener("input", runLab);
-caveats(); drawTracks(); runLab();
+caveats(); drawTracks(); drawScore(); drawCard();
 if (state.pg) segButtons("#pgSeg", Object.keys(D.pangraph).map((k) => [k, k === "SMN" ? "SMN1 / SMN2" : "α-globin"]), "pg", drawPangraph);
 drawPangraph();
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { drawTracks(); runLab(); drawPangraph(); });
-new MutationObserver(() => { drawTracks(); runLab(); drawPangraph(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { drawTracks(); drawScore(); drawCard(); drawPangraph(); });
+new MutationObserver(() => { drawTracks(); drawScore(); drawCard(); drawPangraph(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 </script>

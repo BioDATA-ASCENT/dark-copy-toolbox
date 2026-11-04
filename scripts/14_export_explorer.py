@@ -4,7 +4,7 @@ inline it into reports/explorer/index.html (built from explorer/template.html).
 
 Contents: locus geometry (genes, PSVs) per reference, depth profiles (MAPQ>=0 / >=20, re-binned for size) for
 every truth sample + population quantiles over all sliced samples, per-sample truth / DRAGEN / naive calls,
-the Bayesian caller's sufficient statistics (so the page can re-run the caller live with other parameters),
+the per-person calls of every benchmarked method (the experimental Bayes v0 caller is excluded), the MAPQ ladder,
 and the concordance table.
 """
 import csv
@@ -25,9 +25,7 @@ os.makedirs(OUT, exist_ok=True)
 REBIN = {"SMN": 5, "HBA": 2, "CHR21_FALSEDUP": 2}  # merge this many native bins per displayed bin
 DETAIL_GENES, DETAIL_PAD = ["SMN1", "SMN2"], 40_000  # native-resolution zoom data around these genes
 
-spec = importlib.util.spec_from_file_location("bayes", os.path.join(REPO_ROOT, "caller", "bayes_cn.py"))
-bayes = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(bayes)
+EXCLUDE_METHODS = ("bayes_",)  # the experimental Bayes v0 caller (caller/bayes_cn.py) is not part of the deliverable
 
 
 def tsv(fn):
@@ -46,7 +44,8 @@ def main():
     sel = tsv(path("meta", "samples_selected.tsv"))
     truth = {r["sample"]: r for r in tsv(path("truth", "diploid.tsv"))}
     truth_samples = {r["sample"] for r in sel if r["role"] == "truth"}
-    data = {"loci": {}, "profiles": {}, "samples": [], "caller": {}, "concordance": tsv(path("tables", "concordance.tsv"))}
+    data = {"loci": {}, "profiles": {}, "samples": [],
+            "concordance": [r for r in tsv(path("tables", "concordance.tsv")) if not r["method"].startswith(EXCLUDE_METHODS)]}
 
     # ---- locus geometry
     for ref in ["grch38", "chm13"]:
@@ -146,27 +145,6 @@ def main():
                 band={nm: pack(np.nanpercentile(dcn, pc, axis=0)) for nm, pc in [("q10", 10), ("q50", 50), ("q90", 90)]},
                 samples={samples[i]: pack(dcn[i]) for i in keep})
 
-    # ---- caller sufficient statistics (mirrors bayes.posterior)
-    for ref in ["grch38", "chm13"]:
-        if not os.path.exists(path("tables", f"depth.{ref}.tsv.gz")):
-            continue
-        genes, ctrl, psv = bayes.load_inputs(ref, 0)
-        rho = {fam: bayes.site_bias(psv, fam) for fam in bayes.FAMS}
-        per = {}
-        for s, g in genes.items():
-            e = {}
-            cv2 = (statistics.pstdev(ctrl[s]) / statistics.mean(ctrl[s])) ** 2 if len(ctrl[s]) > 5 else None
-            for fam, (A, B) in bayes.FAMS.items():
-                if A not in g or B not in g:
-                    continue
-                sites = psv.get((s, fam), {})
-                use = [(x / rho[fam].get(sid, 1.0), y) for sid, (x, y) in sites.items() if x + y > 0 and (not rho[fam] or sid in rho[fam])]
-                e[fam] = dict(sum_norm=round(g[A][0] + g[B][0], 4), nA=round(g[A][0], 3), nB=round(g[B][0], 3),
-                              L=(g[A][1] + g[B][1]) / 2, cv2=cv2, X=round(sum(x for x, _ in use), 2),
-                              N=round(sum(x + y for x, y in use), 2), nsites=len(use))
-            per[s] = e
-        data["caller"][ref] = per
-
     # ---- per-sample table
     dragen = defaultdict(dict)
     for r in tsv(path("tables", "dragen_calls.tsv")):
@@ -187,7 +165,7 @@ def main():
     # per-person calls for every scored method (truth samples only) so the page can stratify and add CIs
     calls = defaultdict(lambda: defaultdict(dict))
     for r in tsv(path("tables", "calls_long.tsv")):
-        if r["truth"] != "":
+        if r["truth"] != "" and not r["method"].startswith(EXCLUDE_METHODS):
             calls[r["method"]][r["target"]][r["sample"]] = int(r["call"])
     data["calls"] = calls
     ctrl = CFG.get("control_gene")
@@ -200,7 +178,10 @@ def main():
     data["sim"] = json.load(open(sim)) if os.path.exists(sim) else None
     pg = os.path.join(OUT, "pangraph.json")
     data["pangraph"] = json.load(open(pg)) if os.path.exists(pg) else {}
-    data["meta"] = dict(n_selected=len(sel), n_truth=len(truth), refs=list(data["caller"].keys()),
+    data["meta"] = dict(n_selected=len(sel), n_truth=len(truth), refs=["grch38", "chm13"],
+                        n_sliced_both=len(set(data["profiles"]["grch38"].get("SMN", {}).get("mq", {}).get("0", {}).get("samples", {})) and
+                                          {f.split(".")[0] for f in os.listdir(path("slices", "grch38")) if f.endswith(".ok")} &
+                                          {f.split(".")[0] for f in os.listdir(path("slices", "chm13")) if f.endswith(".ok")}),
                         native_bin_bp={"SMN": 1000, "HBA": 250, "CHR21_FALSEDUP": 1000}, rebin=REBIN)
     js = json.dumps(data, separators=(",", ":"))
     with open(os.path.join(OUT, "data.json"), "w") as fh:
