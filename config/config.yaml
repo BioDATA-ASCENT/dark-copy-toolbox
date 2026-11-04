@@ -150,3 +150,6 @@ simulation:
     - {id: A, label: "SMA-affected", haplotypes: ["HG02132#1#CM086896.1", "HG03583#2#JBHIKB010000004.1"], SMN1: 0, SMN2: 4}
     - {id: B, label: "SMA carrier", haplotypes: ["HG03583#2#JBHIKB010000004.1", "NA18948#2#JBKACD010000005.1"], SMN1: 1, SMN2: 3}
     - {id: C, label: "Unaffected", haplotypes: ["HG02004#2#JBHDRU010000048.1", "NA18508#1#CM089649.1"], SMN1: 2, SMN2: 2}
+
+# S11 MAPQ slider in the toolbox: depth thresholds measured by scripts/21_mapq_ladder.py
+mapq_ladder: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]

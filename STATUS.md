@@ -58,3 +58,8 @@
 | 2026-11-04 14:28 | S9_site | DONE | docs/index.html + docs/outline.html |
 | 2026-11-04 14:30 | S6_explorer | DONE | reports/explorer/data.json (4.7 MB) |
 | 2026-11-04 14:30 | S9_site | DONE | docs/index.html + docs/outline.html |
+| 2026-11-04 16:28 | S11_mapq_ladder_grch38 | DONE | 648 slices × 13 MAPQ thresholds |
+| 2026-11-04 16:42 | S11_mapq_ladder_chm13 | DONE | 650 slices × 13 MAPQ thresholds |
+| 2026-11-04 16:43 | S6_explorer | DONE | reports/explorer/data.json (10.0 MB) |
+| 2026-11-04 16:45 | S6_explorer | DONE | reports/explorer/data.json (10.0 MB) |
+| 2026-11-04 16:45 | S9_site | DONE | docs/index.html + docs/outline.html |

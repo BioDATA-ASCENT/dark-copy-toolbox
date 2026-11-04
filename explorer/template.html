@@ -142,6 +142,7 @@ h4 { margin: 0 0 4px; font: 650 12px var(--f-body); text-transform: uppercase; l
 .howtruth ol { margin: 10px 0; padding-left: 20px; display: grid; gap: 6px; max-width: 100ch; }
 .howtruth b { color: var(--ink); }
 .toplinks { font-size: 14px; } .toplinks a { color: var(--accent); }
+.mqctl input[type=range] { width: 200px; }
 .notrun { border: 1px dashed var(--axis); border-radius: 6px; padding: 10px 12px; font-size: 13.5px; color: var(--ink-2); }
 details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
 .glossary { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 0; font-size: 14px; }
@@ -219,7 +220,7 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
       <div><h4>What you're looking at</h4><p>Read depth for the selected person along the region, on the old reference GRCh38 (top) and the complete T2T-CHM13 (bottom). Depth is converted to copy number, so 2 = the normal two copies.</p></div>
       <div><h4>How to read it</h4><ul>
         <li><span class="sw" style="background:var(--mq0)"></span><b>Blue</b>: all reads.</li>
-        <li><span class="sw" style="background:var(--mq20)"></span><b>Orange</b>: only reads the aligner places confidently (MAPQ ≥ 20).</li>
+        <li><span class="sw" style="background:var(--mq20)"></span><b>Orange</b>: only reads at or above the MAPQ you pick with the slider (default 20 = confidently placed). Slide it from 0 to 60 and watch where the reads disappear.</li>
         <li><span class="sw band"></span><b>Grey band</b>: the range where 80% of the 650 people fall.</li>
         <li><span class="sw" style="background:var(--psv);height:8px;width:2px"></span><b>Yellow ticks</b>: the few positions where the twins differ.</li>
         <li>Where blue stays near 2 and orange drops to 0, the reads are present but their placement is ambiguous. That's the “dark” part. Hover for exact values.</li>
@@ -228,8 +229,12 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
     <div class="panel">
       <div class="controls">
         <div class="seg" role="group" aria-label="Region" id="locusSeg"></div>
+        <label class="ctl mqctl" for="sMapq"><span class="sw" style="background:var(--mq20)"></span>orange line: reads with MAPQ ≥ <input type="range" id="sMapq" min="0" max="60" step="5" value="20"><b class="mono" id="vMapq">20</b></label>
       </div>
       <div class="tracks" id="tracks"></div>
+      <div class="sub" id="mqWrap"><h3>Copy number vs MAPQ threshold · <span id="mqWho" class="mono"></span></h3>
+        <p class="note">Each line is one gene for the selected person: its copy number when only reads at or above that MAPQ are counted. Unique genes (dashed control) stay flat at 2. Twin genes fall off a cliff as soon as ambiguous reads are excluded. The vertical line is the slider.</p>
+        <div class="grid2" id="mqCurve" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))"></div></div>
       <p class="note" id="locusNote"></p>
     </div>
     <div class="takeaway"><b>Key message</b> At the control gene RAD17 both lines sit at 2. Over SMN1/SMN2, confident reads disappear on <em>both</em> references, because the twins are real. On chr21, GRCh38 contains a fake extra copy of CBS/U2AF1/CRYAA, so reads split between the two and CBS looks lost. CHM13 removes the fake copy and the genes come back at 2.</div>
@@ -378,7 +383,7 @@ const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS,
 const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const LOCI = [["SMN", "SMN1 / SMN2 · chr5q13"], ["HBA", "α-globin · chr16p13.3"], ["CHR21_FALSEDUP", "chr21 false duplication"]];
 const REFNAME = { grch38: "GRCh38", chm13: "T2T-CHM13v2.0" };
-const state = { locus: "SMN", sample: null, ref: "grch38", target: "SMN1", subset: "all" };
+const state = { locus: "SMN", sample: null, ref: "grch38", target: "SMN1", subset: "all", mapq: 20 };
 
 // ---------------------------------------------------------------- samples
 const samples = D.samples;
@@ -418,6 +423,40 @@ function fillSamples(filter = "") {
   if (sel.options.length && !sel.value) { state.sample = sel.options[0].value; }
 }
 
+// ---------------------------------------------------------------- MAPQ ladder (bytes: CN×25, 255 = missing)
+const LAD = {};
+function ladBytes(b64) { const k = b64; if (LAD[k]) return LAD[k]; const s = atob(b64), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return (LAD[k] = u); }
+function ladderLocus(ref, locus, packed) { // -> array of CN for this locus at state.mapq, or null
+  const L = D.ladder?.[ref]; if (!L || !packed) return null; const qi = L.qs.indexOf(+state.mapq); if (qi < 0) return null;
+  const tot = L.loci.reduce((a, l) => a + L.nbins[l], 0); let off = 0; for (const l of L.loci) { if (l === locus) break; off += L.nbins[l]; }
+  const u = ladBytes(packed), base = qi * tot + off, out = [];
+  for (let i = 0; i < L.nbins[locus]; i++) { const v = u[base + i]; out.push(v === 255 ? null : v / 25); } return out; }
+function drawMqCurve() {
+  const host = $("#mqCurve"); if (!host) return; host.innerHTML = "";
+  if (!D.ladder || !Object.keys(D.ladder).length) { $("#mqWrap").hidden = true; return; }
+  $("#mqWho").textContent = state.sample;
+  const PICK = { SMN: [["SMN1", "--smn1"], ["SMN2", "--smn2"], ["NAIP", "--gene-dup"], ["RAD17", null]], HBA: [["HBA1", "--smn1"], ["HBA2", "--smn2"], ["HBZ", "--gene-dup"], ["HBQ1", "--psv"]],
+    CHR21_FALSEDUP: [["CBS", "--smn1"], ["U2AF1", "--smn2"], ["CRYAA", "--gene-dup"], ["CBSL", "--psv"]] }[state.locus];
+  for (const ref of Object.keys(D.ladder)) {
+    const L = D.ladder[ref], packed = L.gene_cn[state.sample]; if (!packed) continue; const u = ladBytes(packed), ng = L.genes.length;
+    const d = document.createElement("div"); d.className = "sub"; d.innerHTML = `<h3>${REFNAME[ref]}</h3>`; host.appendChild(d);
+    const W = 520, H = 210, ML = 34, MR = 70, MT = 8, MB = 28; const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": `copy number vs MAPQ on ${REFNAME[ref]}` }, d);
+    const X = (q) => ML + q / 60 * (W - ML - MR), Y = (v) => MT + (1 - Math.min(v, 4) / 4) * (H - MT - MB);
+    for (const v of [0, 1, 2, 3, 4]) { el("line", { x1: ML, x2: W - MR, y1: Y(v), y2: Y(v), stroke: css(v === 2 ? "--axis" : "--rule"), "stroke-width": 0.8, "stroke-dasharray": v === 2 ? "4 3" : "" }, svg); el("text", { x: ML - 6, y: Y(v) + 3.5, "text-anchor": "end" }, svg).textContent = v; }
+    for (const q of [0, 10, 20, 30, 40, 50, 60]) el("text", { x: X(q), y: H - 12, "text-anchor": "middle" }, svg).textContent = q;
+    el("text", { x: X(30), y: H - 1, "text-anchor": "middle" }, svg).textContent = "minimum MAPQ counted";
+    el("line", { x1: X(+state.mapq), x2: X(+state.mapq), y1: MT, y2: H - MB, stroke: css("--mq20"), "stroke-width": 1.5 }, svg);
+    const labels = [];
+    for (const [g, col] of PICK) { const gi = L.genes.indexOf(g); if (gi < 0) continue;
+      const pts = L.qs.map((q, qi) => [q, u[qi * ng + gi]]).filter(([, v]) => v !== 255).map(([q, v]) => [q, v / 25]); if (!pts.length) continue;
+      const stroke = col ? css(col) : css("--ink-2");
+      el("polyline", { points: pts.map(([q, v]) => `${X(q).toFixed(1)},${Y(v).toFixed(1)}`).join(" "), fill: "none", stroke, "stroke-width": 2, "stroke-dasharray": col ? "" : "5 4" }, svg);
+      for (const [q, v] of pts) { const c = el("circle", { cx: X(q), cy: Y(v), r: 2.6, fill: stroke }, svg); el("title", {}, c).textContent = `${g} · MAPQ ≥ ${q}: CN ${v.toFixed(2)}`; }
+      const last = pts[pts.length - 1]; labels.push({ y: Y(last[1]), g: g + (col ? "" : " (control)"), stroke }); }
+    labels.sort((a, b) => a.y - b.y); let prev = -1e9; for (const l of labels) { l.y = Math.max(l.y, prev + 12); prev = l.y;
+      el("text", { x: W - MR + 6, y: l.y + 3.5, style: `fill:${css("--ink-2")}` }, svg).textContent = l.g; }
+  }
+}
 function drawTracks() {
   const host = $("#tracks"); host.innerHTML = "";
   const notes = [];
@@ -457,8 +496,9 @@ function drawTracks() {
       const bot = run.slice().reverse().map(([x, i]) => `${x.toFixed(1)},${Y(q10[i]).toFixed(1)}`).join(" ");
       el("polygon", { points: `${top} ${bot}`, fill: css("--band"), stroke: "none" }, svg);
     });
-    for (const [q, col, w] of [["0", "--mq0", 1.6], ["20", "--mq20", 1.6]]) {
-      const arr = P.mq[q]?.samples?.[state.sample]; if (!arr) continue;
+    const lad = ladderLocus(ref, state.locus, D.ladder?.[ref]?.samples?.[state.sample]);
+    for (const [q, col, w] of [["0", "--mq0", 1.6], ["sel", "--mq20", 1.6]]) {
+      const arr = q === "0" ? P.mq["0"]?.samples?.[state.sample] : (lad && lad.length === bins.length ? lad : (+state.mapq === 20 ? P.mq["20"]?.samples?.[state.sample] : null)); if (!arr) continue;
       segs(arr, (run) => el("polyline", { points: run.map(([x, i]) => `${x.toFixed(1)},${Y(arr[i]).toFixed(1)}`).join(" "), fill: "none", stroke: css(col), "stroke-width": w, "stroke-linejoin": "round" }, svg));
     }
     // gene track
@@ -484,11 +524,11 @@ function drawTracks() {
       let best = -1, bd = 1e9; bins.forEach((b, i) => { const x = X((b[0] + b[1]) / 2); if (x != null && Math.abs(x - p.x) < bd) { bd = Math.abs(x - p.x); best = i; } });
       if (best < 0) return;
       const x = X((bins[best][0] + bins[best][1]) / 2); cross.setAttribute("x1", x); cross.setAttribute("x2", x); cross.setAttribute("visibility", "visible");
-      const a0 = P.mq["0"].samples?.[state.sample]?.[best], a20 = P.mq["20"]?.samples?.[state.sample]?.[best];
+      const a0 = P.mq["0"].samples?.[state.sample]?.[best], a20s = lad && lad.length === bins.length ? lad[best] : (+state.mapq === 20 ? P.mq["20"]?.samples?.[state.sample]?.[best] : null), a20 = a20s == null ? null : (+a20s).toFixed(2);
       const g = G.genes.filter((g) => g.start < bins[best][1] && bins[best][0] < g.end).map((g) => g.name).join(", ");
       const tip = $("#tip"); tip.hidden = false;
       tip.innerHTML = `<div>${G.windows[0][0]}:${bins[best][0].toLocaleString()}–${bins[best][1].toLocaleString()}</div>${g ? `<div class="k">${g}</div>` : ""}` +
-        `<div><span style="color:var(--mq0)">■</span> MAPQ≥0 <b>${a0 ?? "–"}</b></div><div><span style="color:var(--mq20)">■</span> MAPQ≥20 <b>${a20 ?? "–"}</b></div>` +
+        `<div><span style="color:var(--mq0)">■</span> MAPQ≥0 <b>${a0 ?? "–"}</b></div><div><span style="color:var(--mq20)">■</span> MAPQ≥${state.mapq} <b>${a20 ?? "–"}</b></div>` +
         `<div class="k">population 10–90%: ${P.mq["0"].q10[best]}–${P.mq["0"].q90[best]}</div>`;
       tip.style.left = ev.pageX + (ev.clientX > window.innerWidth - 220 ? -200 : 14) + "px"; tip.style.top = ev.pageY + 12 + "px";
     });
@@ -498,6 +538,7 @@ function drawTracks() {
     HBA: "HBA1 and HBA2 differ at a handful of sites; the common −α3.7 deletion removes one copy and fuses the two genes. Watch for samples whose MAPQ≥0 depth sits near 1.5 (3 copies) or 2.5 (5 copies, ααα triplication).",
     CHR21_FALSEDUP: "GRCh38 carries a false duplication of the CBS/U2AF1/CRYAA region at chr21:6.4 Mb (purple). Reads split between the real and false copy, so each shows ~1 copy at MAPQ 0 on GRCh38. CHM13 has one copy: depth 2, MAPQ intact." };
   $("#locusNote").textContent = N[state.locus];
+  drawMqCurve();
 }
 
 // ---------------------------------------------------------------- caller (mirror of caller/bayes_cn.py)
@@ -870,6 +911,8 @@ segButtons("#refSeg", Object.keys(D.caller).map((r) => [r, REFNAME[r]]), "ref", 
 segButtons("#tgtSeg", [["SMN1", "SMN1"], ["SMN2_all", "SMN2 incl. Δ7-8"], ["SMN_total", "SMN total"], ["HBA_total", "α-globin total"]].concat(D.control?.gene ? [[`CONTROL_${D.control.gene}`, `Control: ${D.control.gene}`]] : []), "target", drawScore);
 segButtons("#subSeg", [["all", "All people"], ["atypical", "Atypical people only"]], "subset", drawScore);
 locusCards(); shortcuts(); stepNav(); initPatients();
+if (D.ladder && Object.keys(D.ladder).length) { $("#sMapq").oninput = (e) => { state.mapq = +e.target.value; $("#vMapq").textContent = state.mapq; drawTracks(); }; }
+else { $("#sMapq").disabled = true; }
 fillSamples();
 $("#sampleSel").onchange = (e) => { state.sample = e.target.value; drawTracks(); drawCard(); drawPangraph(); };
 $("#sampleSearch").oninput = (e) => { fillSamples(e.target.value); state.sample = $("#sampleSel").value; drawTracks(); drawCard(); drawPangraph(); };

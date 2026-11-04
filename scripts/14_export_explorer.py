@@ -95,6 +95,35 @@ def main():
         data["profiles"][ref] = out
         log(f"explorer: {ref} profiles for {len(prof)} loci")
 
+    # ---- MAPQ ladder (scripts/21): CN at MAPQ >= 0,5,…,60 for the toolbox slider, packed as bytes
+    #      value byte = round(CN × 25) (0..254, 255 = missing); layout per sample: [q][locus bins in LADDER_LOCI order]
+    import base64
+    data["ladder"] = {}
+    for ref in ["grch38", "chm13"]:
+        fn = path("tables", f"mapq_ladder.{ref}.npz")
+        if not os.path.exists(fn):
+            continue
+        z = np.load(fn, allow_pickle=False)
+        regs = [l.rstrip("\n").split("\t") for l in open(path("regions", f"{ref}.depth_regions.bed"))]
+        ids = list(z["ids"]); assert ids == [r[3] for r in regs], "ladder regions out of sync with depth_regions.bed"
+        cn = z["cn"]; qs = [int(q) for q in z["qs"]]; samples = list(z["samples"])
+        loci = sorted({r[3].split(":")[0] for r in regs if r[4] == "bin"})
+        cols, nb = [], {}
+        for lc in loci:
+            idx = sorted([i for i, r in enumerate(regs) if r[4] == "bin" and r[3].split(":")[0] == lc], key=lambda i: int(regs[i][1]))
+            k = REBIN.get(lc, 1)
+            groups = [idx[i:i + k] for i in range(0, len(idx), k)]
+            cols += groups; nb[lc] = len(groups)
+        disp = np.stack([np.nanmean(cn[:, :, g], axis=2) for g in cols], axis=2)      # [sample, q, displayed bin]
+        gidx = [i for i, r in enumerate(regs) if r[4] == "gene"]
+        pack = lambda a: base64.b64encode(np.where(np.isfinite(a), np.clip(np.round(a * 25), 0, 254), 255).astype(np.uint8).tobytes()).decode()
+        keep = [i for i, smp in enumerate(samples) if smp in truth_samples]
+        band = {nm: pack(np.nanpercentile(disp, pc, axis=0)) for nm, pc in [("q10", 10), ("q50", 50), ("q90", 90)]}
+        data["ladder"][ref] = dict(qs=qs, loci=loci, nbins=nb, genes=[regs[i][3] for i in gidx], band=band,
+                                   samples={samples[i]: pack(disp[i]) for i in keep},
+                                   gene_cn={samples[i]: pack(cn[i][:, gidx]) for i in keep})
+        log(f"explorer: {ref} MAPQ ladder for {len(keep)} samples × {len(qs)} thresholds")
+
     # ---- caller sufficient statistics (mirrors bayes.posterior)
     for ref in ["grch38", "chm13"]:
         if not os.path.exists(path("tables", f"depth.{ref}.tsv.gz")):
