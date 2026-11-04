@@ -474,7 +474,7 @@ function caveats() {
     "Naive depth uses per-gene normalised depth rounded to the nearest integer with no GC or mappability correction; it is the baseline, not a straw man for read-depth callers in general.",
     "DRAGEN 4.4.7 results are labelled 'multigenome' after the bucket's reference name (hg38-alt_masked.cnv.graph…); DRAGEN targeted callers are paralog-aware and use their own internal normalisation.",
     "The Bayes v0 prior comes from DRAGEN 4.2.7 calls on the other 1kGP samples here, so with the prior on it partly inherits DRAGEN's errors. Its depth calibration assumes the median sample carries 4 copies per family (no truth used).",
-    "*ctyper's allele table annotates assemblies (mostly HPRC year-1 / CPC / HGSVC), so it checks our truth typing rather than calling from reads.",
+    "Assembly truth agrees with DRAGEN 4.2.7 on 201/206 SMN samples and 220/221 α-globin samples; the 6 samples that disagree are listed in data/tables/truth_crosscheck.tsv. ctyper's allele table is not scored: it groups HBA2/HBA1/HBAP1 into one allele and only covers year-1 haplotypes that resolved SMN.",
   ];
   $("#caveats").innerHTML = items.map((x) => `<li>${x}</li>`).join("");
 }

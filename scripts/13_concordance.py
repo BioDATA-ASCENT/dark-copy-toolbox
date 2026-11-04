@@ -11,7 +11,7 @@ Methods:
 
 Outputs: data/tables/calls_long.tsv (sample, method, target, call, truth)
          data/tables/concordance.tsv (method, target, n, n_correct, accuracy, n_over, n_under)
-         data/tables/truth_crosscheck.tsv (every truth vs DRAGEN 4.2.7 / ctyper disagreement)
+         data/tables/truth_crosscheck.tsv (every truth vs DRAGEN 4.2.7 disagreement)
 """
 import csv
 import glob
@@ -101,6 +101,7 @@ def main():
                 m = re.search(r"_((?:HG|NA)\d{5})_h([12])_", mem)
                 if m:
                     cty_hap[(m.group(1), m.group(2))][gene] += 1
+        cty_calls = {}
         per = defaultdict(lambda: defaultdict(int))
         nh = defaultdict(set)
         for (s, h), d in cty_hap.items():
@@ -113,7 +114,14 @@ def main():
             out = {"SMN1": d.get("SMN1", 0), "SMN2_all": d.get("SMN2", 0)}
             out["SMN_total"] = out["SMN1"] + out["SMN2_all"]
             out["HBA_total"] = d.get("HBA1", 0) + d.get("HBA2", 0)
-            calls[(s, "ctyper_annotation")] = out
+            cty_calls[s] = out
+        # NOT scored: ctyper's HBA alleles are one bundled HBA2,HBA1,HBAP1 group (no per-gene count) and its SMN
+        # alleles cover only the R1 haplotypes that resolved the locus -> 50% "accuracy" is an annotation-coverage
+        # artefact, not a caller result. Kept as a side table for reference only.
+        with open(os.path.join(TB, "ctyper_annotation_counts.tsv"), "w") as fh:
+            fh.write("sample\tSMN1\tSMN2_all\tHBA_group_alleles\n")
+            for s, o in sorted(cty_calls.items()):
+                fh.write(f"{s}\t{o['SMN1']}\t{o['SMN2_all']}\t{o['HBA_total']}\n")
 
     long, conc = [], defaultdict(lambda: [0, 0, 0, 0])
     for (s, m), d in calls.items():
@@ -134,12 +142,12 @@ def main():
         fh.write("method\ttarget\tn\tn_correct\taccuracy\tn_over\tn_under\n")
         for (m, tgt), (n, ok, ov, un) in sorted(conc.items()):
             fh.write(f"{m}\t{tgt}\t{n}\t{ok}\t{ok / n:.3f}\t{ov}\t{un}\n")
-    dis = [r for r in long if r[1] in ("dragen_4.2.7", "ctyper_annotation") and r[4] != "" and r[3] != r[4]]
+    dis = [r for r in long if r[1] == "dragen_4.2.7" and r[4] != "" and r[3] != r[4]]
     with open(os.path.join(TB, "truth_crosscheck.tsv"), "w") as fh:
         fh.write("sample\tmethod\ttarget\tcall\ttruth\n")
         for r in sorted(dis):
             fh.write("\t".join(map(str, r)) + "\n")
-    log(f"concordance: {len(conc)} method×target cells; {len(dis)} truth disagreements vs DRAGEN 4.2.7 / ctyper")
+    log(f"concordance: {len(conc)} method×target cells; {len(dis)} truth disagreements vs DRAGEN 4.2.7")
     status("S3_concordance", "DONE", f"{len(conc)} method×target cells; {len(dis)} disagreements in truth_crosscheck.tsv")
 
 

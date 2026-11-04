@@ -27,3 +27,13 @@
 | 2026-11-04 04:25 | S6_explorer | DONE | reports/explorer/data.json (2.3 MB) |
 | 2026-11-04 04:29 | S6_explorer | DONE | reports/explorer/data.json (2.3 MB) |
 | 2026-11-04 04:30 | P10_report | DONE | reports/MORNING_REPORT.md |
+| 2026-11-04 05:20 | P6_slices | DONE | grch38 648, chm13 650 slices; 2 non-OK attempts (logs/slices.tsv) |
+| 2026-11-04 05:33 | P8_truth | DONE | 446/446 haplotypes typed; 0 failed; data/truth/diploid.tsv |
+| 2026-11-04 05:55 | P9_tables | DONE | 1298 sample×ref depth tables; median control depth 34.733x |
+| 2026-11-04 05:57 | S3_concordance | DONE | 47 method×target cells; 91 disagreements in truth_crosscheck.tsv |
+| 2026-11-04 05:58 | S3_concordance | DONE | 43 method×target cells; 11 disagreements in truth_crosscheck.tsv |
+| 2026-11-04 05:59 | S6_explorer | DONE | reports/explorer/data.json (3.6 MB) |
+| 2026-11-04 06:00 | S6_explorer | DONE | reports/explorer/data.json (3.6 MB) |
+| 2026-11-04 06:01 | S6_explorer | DONE | reports/explorer/data.json (3.6 MB) |
+| 2026-11-04 06:02 | P10_report | DONE | reports/MORNING_REPORT.md |
+| 2026-11-04 06:03 | P10_report | DONE | reports/MORNING_REPORT.md |
