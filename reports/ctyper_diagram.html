@@ -1,0 +1,201 @@
+<title>How ctyper counts SMN</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,600..800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one wide four-stage diagram on a quiet panel, numbered because the stages really are a sequence; the same palette as the Dark Copy Toolbox. */
+:root {
+  --ground: #f3f5f7; --surface: #fcfcfb; --ink: #0f1720; --ink-2: #4a5462; --muted: #7d8794; --rule: #dde2e8;
+  --accent: #23395b; --smn1: #2a78d6; --smn2: #eb6834; --smn2d: #f2b48c; --cell-off: #e9edf1; --bar: #23395b; --hit: #eda100;
+  --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #0e1116; --surface: #161a20; --ink: #eef1f4; --ink-2: #b7c0cb; --muted: #87919d; --rule: #2a313b;
+    --accent: #9db8e0; --smn1: #3987e5; --smn2: #d95926; --smn2d: #8a4a2a; --cell-off: #222831; --bar: #9db8e0; --hit: #c98500;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #0e1116; --surface: #161a20; --ink: #eef1f4; --ink-2: #b7c0cb; --muted: #87919d; --rule: #2a313b;
+  --accent: #9db8e0; --smn1: #3987e5; --smn2: #d95926; --smn2d: #8a4a2a; --cell-off: #222831; --bar: #9db8e0; --hit: #c98500;
+}
+* { box-sizing: border-box; }
+body { background: var(--ground); color: var(--ink); font: 15px/1.55 var(--f-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 1160px; margin: 0 auto; padding-block: 32px 56px; display: grid; gap: 20px; }
+.eyebrow { font: 500 12px var(--f-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+h1 { font: 800 clamp(28px, 4.4vw, 42px)/1.08 var(--f-display); font-stretch: 85%; margin: 4px 0 0; text-wrap: balance; }
+p { margin: 0; max-width: 72ch; color: var(--ink-2); }
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 16px; overflow-x: auto; }
+svg { display: block; width: 100%; min-width: 900px; height: auto; }
+svg text { font-family: var(--f-body); fill: var(--ink-2); font-size: 13px; }
+svg .t { font: 700 17px var(--f-display); fill: var(--ink); }
+svg .n { font: 600 12px var(--f-mono); fill: var(--surface); }
+svg .m { font-family: var(--f-mono); font-size: 12px; }
+svg .ink { fill: var(--ink); }
+svg .mut { fill: var(--muted); }
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px 24px; }
+.steps div { display: grid; gap: 4px; align-content: start; }
+.steps b { font: 700 15px var(--f-display); color: var(--ink); }
+.steps p { font-size: 14px; }
+.note { font-size: 13px; color: var(--muted); max-width: 100ch; }
+code { font-family: var(--f-mono); font-size: 0.9em; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Dark Copy Toolbox · method note</div>
+    <h1>How ctyper counts SMN1 and SMN2</h1>
+  </header>
+  <p>ctyper never asks where a read aligns. It compares the k-mers in a person's reads with the k-mers of every SMN copy seen in real genome assemblies, then finds the mix of copies that explains the counts. The numbers below are a toy example of 4 alleles and 8 k-mers; the real SMN panel has about 340 alleles and tens of thousands of k-mers.</p>
+
+  <div class="panel" role="img" aria-label="Four stages: pangenome alleles, k-mer matrix, counting k-mers in reads, solving for copies">
+  <svg viewBox="0 0 1120 470" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill: var(--muted)"/></marker>
+    </defs>
+
+    <!-- stage headers -->
+    <g>
+      <circle cx="32" cy="30" r="13" style="fill: var(--accent)"/><text class="n" x="32" y="34" text-anchor="middle">1</text>
+      <text class="t" x="54" y="36">Collect every copy</text>
+      <circle cx="312" cy="30" r="13" style="fill: var(--accent)"/><text class="n" x="312" y="34" text-anchor="middle">2</text>
+      <text class="t" x="334" y="36">Tabulate their k-mers</text>
+      <circle cx="602" cy="30" r="13" style="fill: var(--accent)"/><text class="n" x="602" y="34" text-anchor="middle">3</text>
+      <text class="t" x="624" y="36">Count them in the reads</text>
+      <circle cx="882" cy="30" r="13" style="fill: var(--accent)"/><text class="n" x="882" y="34" text-anchor="middle">4</text>
+      <text class="t" x="904" y="36">Solve for copies</text>
+    </g>
+
+    <!-- 1: pangenome alleles -->
+    <g>
+      <text x="20" y="70">From HPRC / HGSVC / CPC assemblies,</text>
+      <text x="20" y="88">each SMN copy is cut out with flanks:</text>
+      <text class="m mut" x="20" y="122">A</text><rect x="40" y="110" width="200" height="16" rx="3" style="fill: var(--smn1)"/>
+      <text class="m mut" x="20" y="152">B</text><rect x="40" y="140" width="200" height="16" rx="3" style="fill: var(--smn2)"/>
+      <text class="m mut" x="20" y="182">C</text><rect x="40" y="170" width="200" height="16" rx="3" style="fill: var(--smn2)"/>
+      <text class="m mut" x="20" y="212">D</text><rect x="40" y="200" width="150" height="16" rx="3" style="fill: var(--smn2d)"/>
+      <text x="40" y="242" class="ink">A = SMN1 · B, C = SMN2 variants</text>
+      <text x="40" y="260" class="ink">D = SMN2Δ7–8 (lacks exons 7–8)</text>
+      <text x="20" y="300">Precomputed once by the ctyper</text>
+      <text x="20" y="318">authors; ~340 SMN-family alleles,</text>
+      <text x="20" y="336">each ≈ 49 kb.</text>
+    </g>
+    <line x1="262" y1="165" x2="292" y2="165" style="stroke: var(--muted); stroke-width: 1.5" marker-end="url(#arr)"/>
+
+    <!-- 2: k-mer matrix (rows A-D, cols k1-k8) -->
+    <g>
+      <text x="300" y="70">31-mers found only in this gene</text>
+      <text x="300" y="88">family. Filled = allele has it.</text>
+      <g class="m mut">
+        <text x="352" y="104" text-anchor="middle">k1</text><text x="380" y="104" text-anchor="middle">k2</text><text x="408" y="104" text-anchor="middle">k3</text><text x="436" y="104" text-anchor="middle">k4</text>
+        <text x="464" y="104" text-anchor="middle">k5</text><text x="492" y="104" text-anchor="middle">k6</text><text x="520" y="104" text-anchor="middle">k7</text><text x="548" y="104" text-anchor="middle">k8</text>
+        <text x="312" y="124">A</text><text x="312" y="154">B</text><text x="312" y="184">C</text><text x="312" y="214">D</text>
+      </g>
+      <!-- row A: k1 k2 k3 k5 -->
+      <g style="fill: var(--smn1)">
+        <rect x="340" y="110" width="24" height="22" rx="3"/><rect x="368" y="110" width="24" height="22" rx="3"/><rect x="396" y="110" width="24" height="22" rx="3"/><rect x="452" y="110" width="24" height="22" rx="3"/>
+      </g>
+      <g style="fill: var(--cell-off)">
+        <rect x="424" y="110" width="24" height="22" rx="3"/><rect x="480" y="110" width="24" height="22" rx="3"/><rect x="508" y="110" width="24" height="22" rx="3"/><rect x="536" y="110" width="24" height="22" rx="3"/>
+      </g>
+      <!-- row B: k1 k2 k4 k5 k6 -->
+      <g style="fill: var(--smn2)">
+        <rect x="340" y="140" width="24" height="22" rx="3"/><rect x="368" y="140" width="24" height="22" rx="3"/><rect x="424" y="140" width="24" height="22" rx="3"/><rect x="452" y="140" width="24" height="22" rx="3"/><rect x="480" y="140" width="24" height="22" rx="3"/>
+      </g>
+      <g style="fill: var(--cell-off)">
+        <rect x="396" y="140" width="24" height="22" rx="3"/><rect x="508" y="140" width="24" height="22" rx="3"/><rect x="536" y="140" width="24" height="22" rx="3"/>
+      </g>
+      <!-- row C: k1 k2 k4 k5 k7 -->
+      <g style="fill: var(--smn2)">
+        <rect x="340" y="170" width="24" height="22" rx="3"/><rect x="368" y="170" width="24" height="22" rx="3"/><rect x="424" y="170" width="24" height="22" rx="3"/><rect x="452" y="170" width="24" height="22" rx="3"/><rect x="508" y="170" width="24" height="22" rx="3"/>
+      </g>
+      <g style="fill: var(--cell-off)">
+        <rect x="396" y="170" width="24" height="22" rx="3"/><rect x="480" y="170" width="24" height="22" rx="3"/><rect x="536" y="170" width="24" height="22" rx="3"/>
+      </g>
+      <!-- row D: k1 k2 k4 k8 -->
+      <g style="fill: var(--smn2d)">
+        <rect x="340" y="200" width="24" height="22" rx="3"/><rect x="368" y="200" width="24" height="22" rx="3"/><rect x="424" y="200" width="24" height="22" rx="3"/><rect x="536" y="200" width="24" height="22" rx="3"/>
+      </g>
+      <g style="fill: var(--cell-off)">
+        <rect x="396" y="200" width="24" height="22" rx="3"/><rect x="452" y="200" width="24" height="22" rx="3"/><rect x="480" y="200" width="24" height="22" rx="3"/><rect x="508" y="200" width="24" height="22" rx="3"/>
+      </g>
+      <text x="300" y="256" class="ink">k1, k2: in every copy</text>
+      <text x="300" y="274" class="ink">k3: SMN1 letter (e.g. c.840 C)</text>
+      <text x="300" y="292" class="ink">k4: SMN2 letter (c.840 T)</text>
+      <text x="300" y="310" class="ink">k5: exons 7–8 (missing in D)</text>
+      <text x="300" y="328" class="ink">k6–k8: private to one allele</text>
+    </g>
+    <line x1="572" y1="165" x2="590" y2="165" style="stroke: var(--muted); stroke-width: 1.5" marker-end="url(#arr)"/>
+
+    <!-- 3: reads and counts -->
+    <g>
+      <text x="600" y="70">Scan each read's sequence; its</text>
+      <text x="600" y="88">position is never used.</text>
+      <g style="fill: var(--rule)">
+        <rect x="600" y="104" width="120" height="8" rx="2"/><rect x="660" y="118" width="120" height="8" rx="2"/><rect x="620" y="132" width="120" height="8" rx="2"/><rect x="700" y="146" width="120" height="8" rx="2"/>
+      </g>
+      <g style="fill: var(--hit)">
+        <rect x="640" y="104" width="10" height="8"/><rect x="700" y="118" width="10" height="8"/><rect x="725" y="132" width="10" height="8"/><rect x="760" y="146" width="10" height="8"/>
+      </g>
+      <text x="600" y="178">count ÷ d = copies seen per k-mer</text>
+      <!-- bars: observed copies 4.1 3.8 2.1 1.9 4.2 0.9 1.1 0.1 ; scale 1 copy = 22 px, baseline y=330 -->
+      <line x1="608" y1="330" x2="852" y2="330" style="stroke: var(--rule); stroke-width: 1"/>
+      <line x1="608" y1="286" x2="852" y2="286" style="stroke: var(--rule); stroke-width: 1; stroke-dasharray: 3 4"/>
+      <line x1="608" y1="242" x2="852" y2="242" style="stroke: var(--rule); stroke-width: 1; stroke-dasharray: 3 4"/>
+      <text class="m mut" x="604" y="290" text-anchor="end">2</text><text class="m mut" x="604" y="246" text-anchor="end">4</text><text class="m mut" x="604" y="334" text-anchor="end">0</text>
+      <g style="fill: var(--bar)">
+        <rect x="616" y="239.8" width="22" height="90.2" rx="2"/>
+        <rect x="646" y="246.4" width="22" height="83.6" rx="2"/>
+        <rect x="676" y="283.8" width="22" height="46.2" rx="2"/>
+        <rect x="706" y="288.2" width="22" height="41.8" rx="2"/>
+        <rect x="736" y="237.6" width="22" height="92.4" rx="2"/>
+        <rect x="766" y="310.2" width="22" height="19.8" rx="2"/>
+        <rect x="796" y="305.8" width="22" height="24.2" rx="2"/>
+        <rect x="826" y="327.8" width="22" height="2.2" rx="1"/>
+      </g>
+      <g class="m mut">
+        <text x="627" y="348" text-anchor="middle">k1</text><text x="657" y="348" text-anchor="middle">k2</text><text x="687" y="348" text-anchor="middle">k3</text><text x="717" y="348" text-anchor="middle">k4</text>
+        <text x="747" y="348" text-anchor="middle">k5</text><text x="777" y="348" text-anchor="middle">k6</text><text x="807" y="348" text-anchor="middle">k7</text><text x="837" y="348" text-anchor="middle">k8</text>
+      </g>
+      <text x="600" y="380">d = depth of one copy, in 31-mers:</text>
+      <text x="600" y="398" class="m ink">read depth × 120/150 ÷ 2</text>
+    </g>
+    <line x1="862" y1="165" x2="872" y2="165" style="stroke: var(--muted); stroke-width: 1.5" marker-end="url(#arr)"/>
+
+    <!-- 4: solve -->
+    <g>
+      <text x="880" y="70">Find whole numbers of each allele</text>
+      <text x="880" y="88">whose k-mers add up to the counts:</text>
+      <text x="880" y="122" class="m ink">counts ≈ 2·A + 1·B + 1·C + 0·D</text>
+      <text x="880" y="146" class="mut">check k3: 2·A → 2 ✓   k6: 1·B → 1 ✓</text>
+      <text x="880" y="164" class="mut">k5: 2+1+1 = 4 ✓   k8: 0·D → 0 ✓</text>
+      <text x="880" y="204">Then each chosen allele is named</text>
+      <text x="880" y="222">from its sequence:</text>
+      <rect x="880" y="238" width="104" height="44" rx="6" style="fill: var(--smn1)"/>
+      <text x="932" y="266" text-anchor="middle" style="font: 700 16px var(--f-display); fill: #fcfcfb">SMN1 = 2</text>
+      <rect x="994" y="238" width="104" height="44" rx="6" style="fill: var(--smn2)"/>
+      <text x="1046" y="266" text-anchor="middle" style="font: 700 16px var(--f-display); fill: #fcfcfb">SMN2 = 2</text>
+      <text x="880" y="314">A carrier would fit 1·A; an SMA</text>
+      <text x="880" y="332">patient would leave k3 at 0.</text>
+    </g>
+
+    <!-- footer band -->
+    <line x1="20" y1="424" x2="1100" y2="424" style="stroke: var(--rule); stroke-width: 1"/>
+    <text x="20" y="452">ctyper itself aligns nothing, so reads taken from GRCh38 or CHM13 alignments give nearly the same answers (SMN1 exact: 91.3% vs 90.8%).</text>
+  </svg>
+  </div>
+
+  <div class="steps">
+    <div><b>1 · Collect every copy</b><p>The ctyper authors cut every copy of each gene family out of long-read assemblies (HPRC, HGSVC, CPC). Each copy is one “pangenome allele”: SMN1, SMN2, SMN2Δ7–8 and their variants.</p></div>
+    <div><b>2 · Tabulate their k-mers</b><p>For the family, keep the 31-letter words (k-mers) that occur nowhere else in the genome, and record which allele has which. Words covering a twin-specific letter separate SMN1 from SMN2.</p></div>
+    <div><b>3 · Count them in the reads</b><p>Scan the person's reads and count each word. Dividing by the depth of a single copy turns counts into “copies seen”.</p></div>
+    <div><b>4 · Solve for copies</b><p>Find the non-negative whole-number mix of alleles whose words best reproduce the counts (a regression, then rounding), and read off the gene names.</p></div>
+  </div>
+
+  <p class="note">How we ran it: ctyper 1.0.5 on each person's region slices (the reads already aligned to GRCh38 or CHM13, read only for their sequences), with the matrix cut down to four gene groups (<code>SMN_group1</code>, <code>HBA_group1</code>, <code>CBS_group1</code>, <code>U2AF1_group3</code>). Reads aligned outside the slices, for example ~5% of SMN reads on a GRCh38 alt contig, are missed. The toy numbers above are illustrative; the real allele and k-mer counts come from the ctyper database.</p>
+</div>
