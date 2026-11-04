@@ -121,6 +121,9 @@ def main():
     for r in tsv(path("tables", "dragen_calls.tsv")):
         dragen[r["sample"]][r["dragen_version"]] = {k: r[k] for k in ["SMN1_CN", "SMN2_CN", "SMN2_del78_CN", "SMN_total_CN_raw",
                                                                       "HBA_genotype", "HBA_total_copies"]}
+    cty = defaultdict(dict)
+    for r in tsv(path("tables", "ctyper_calls.tsv")):
+        cty[r["sample"]][r["ref"]] = {k: r[k] for k in ["SMN1", "SMN2", "SMN_partial", "SMN_alleles", "HBA_total", "HBA_alleles", "CBS", "U2AF1"]}
     for r in sel:
         s = r["sample"]
         t = truth.get(s)
@@ -129,7 +132,7 @@ def main():
             tr = {k: t[k] for k in ["n_haps", "SMN1", "SMN2", "SMN_del7-8", "SMN?", "SMN_converted", "HBA1", "HBA2",
                                     "HBA_hybrid", "HBA_total", "usable_SMN", "usable_HBA", "flags"]}
         data["samples"].append(dict(id=s, role=r["role"], pop=r["population"], superpop=r["superpop"], sex=r["sex"],
-                                    truth=tr, dragen=dragen.get(s, {})))
+                                    truth=tr, dragen=dragen.get(s, {}), ctyper=cty.get(s) or None))
     pg = os.path.join(OUT, "pangraph.json")
     data["pangraph"] = json.load(open(pg)) if os.path.exists(pg) else {}
     data["meta"] = dict(n_selected=len(sel), n_truth=len(truth), refs=list(data["caller"].keys()),

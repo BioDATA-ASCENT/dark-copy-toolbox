@@ -122,3 +122,11 @@ pangraph:
   conda_env: pggb074
   n_haps: {SMN: 16, HBA: 48}
   pggb_args: "-p 90 -s 5000"
+
+# S8 ctyper run on our region slices (k-mer counting, no read mapping): matrix groups to type and run settings
+ctyper:
+  conda_env: ctyper
+  groups: [SMN_group1, HBA_group1, CBS_group1, U2AF1_group3]
+  read_length: 150        # 1kGP NYGC 2x150; 31-mer depth = read depth * (L-30)/L
+  threads_per_job: 1
+  jobs: 16

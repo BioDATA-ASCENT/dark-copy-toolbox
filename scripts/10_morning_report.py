@@ -175,7 +175,18 @@ def main():
         lines += ["## Locityper", "", "- db loci overlapping our windows: " + ", ".join(f"{r['locus']} ({r['genes_inside']})" for r in lt),
                   "- **No Locityper locus contains SMN1/SMN2 or HBA1/HBA2** → no Locityper-implied CN for those genes "
                   "(`data/tables/locityper_cn.tsv` says so). LOO benchmark rows: `data/tables/locityper_loo.tsv`; "
-                  "1kGP genotypes (with `circular` flag): `data/tables/locityper_1kgp.tsv`.", ""]
+                  "1kGP genotypes (with `circular` flag): `data/tables/locityper_1kgp.tsv`.",
+                  "- **Status: NOT RUN on our samples, by decision.** Locityper aligns reads to candidate haplotypes "
+                  "internally, and this project does no read mapping. SMN would also need a 1–3 Mb locus with unique "
+                  "flanks. ctyper (k-mer counting) is the pangenome genotyper used instead.", ""]
+    ct = tsv(path("tables", "ctyper_calls.tsv"))
+    if ct:
+        lines += ["## ctyper (run here on region slices)", "",
+                  f"- {len(ct)} sample×reference runs; k-mer genotyping against HPRC/CPC/HGSVC pangenome alleles, no read "
+                  "mapping. Input = our slices + measured depth (haploid 31-mer depth = read depth × 120/150 ÷ 2, "
+                  "calibrated on 5 truth samples). Calls: `data/tables/ctyper_calls.tsv`; scored in the concordance table.",
+                  "- Caveat: slices miss reads aligned outside our windows (~5% of SMN reads sit on GRCh38 alt "
+                  "KI270897v1); ctyper's allele panel includes some HPRC samples, so those truth samples are not independent.", ""]
     loc = path("precomputed", "locityper", "our_loci.txt")
     if os.path.exists(loc):
         found = open(loc).read().split()

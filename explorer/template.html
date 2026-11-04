@@ -192,6 +192,7 @@ ul.caveats { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 
     <div class="controls"><div class="seg" role="group" aria-label="Target" id="tgtSeg"></div></div>
     <div id="score"></div>
     <div class="scroll" id="scoreTable"></div>
+    <p class="note"><b>Not run: Locityper.</b> Excluded by design. It aligns reads to candidate haplotypes, and this project does no read mapping. Its public database also has no SMN or HBA locus, and SMN would need a 1–3 Mb locus with unique flanks. ctyper (k-mer counting, no mapping) is the pangenome genotyper on this board.</p>
   </section>
 
   <section class="panel" aria-labelledby="h-cav">
@@ -437,7 +438,7 @@ function drawReliability(rel) {
 const MLAB = (m) => m.replace("naive_grch38_mq0", "Naive depth · GRCh38 · MAPQ≥0").replace("naive_grch38_mq20", "Naive depth · GRCh38 · MAPQ≥20")
   .replace("naive_chm13_mq0", "Naive depth · CHM13 · MAPQ≥0").replace("naive_chm13_mq20", "Naive depth · CHM13 · MAPQ≥20")
   .replace(/^dragen_4\.0\.3$/, "DRAGEN 4.0.3 · graph hg38").replace(/^dragen_4\.2\.7$/, "DRAGEN 4.2.7 · graph hg38 v3").replace(/^dragen_4\.4\.7$/, "DRAGEN 4.4.7 · multigenome")
-  .replace("ctyper_annotation", "ctyper pangenome allele annotation*").replace(/^bayes_(.*)$/, "Bayes v0 (offline run: $1)");
+  .replace(/^ctyper_grch38$/, "ctyper 1.0.5 · k-mers, GRCh38-slice reads").replace(/^ctyper_chm13$/, "ctyper 1.0.5 · k-mers, CHM13-slice reads").replace(/^bayes_(.*)$/, "Bayes v0 (offline run: $1)");
 function drawScore() {
   const tgt = state.target;
   const rows = D.concordance.filter((r) => r.target === tgt).map((r) => ({ m: MLAB(r.method), n: +r.n, ok: +r.n_correct, over: +r.n_over, under: +r.n_under, live: false }));
@@ -470,7 +471,10 @@ function drawCard() {
   } else box("Assembly truth", `<p class="note">${s.role === "truth" ? "Truth typing pending or failed for this sample." : `No assembly: ${s.role} sample.`}</p>`);
   const rows = ["4.0.3", "4.2.7", "4.4.7"].map((v) => { const d = s.dragen?.[v]; if (!d) return "";
     return `<tr><td class="mono">${v}</td><td class="num">${d.SMN1_CN}</td><td class="num">${d.SMN2_CN}</td><td class="num">${d.SMN2_del78_CN}</td><td class="mono">${d.HBA_genotype || "–"}</td><td class="num">${d.HBA_total_copies || "–"}</td></tr>`; }).join("");
-  box("DRAGEN targeted callers", `<div class="scroll"><table><thead><tr><th>version</th><th class="num">SMN1</th><th class="num">SMN2</th><th class="num">Δ7-8</th><th>HBA</th><th class="num">α total</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+  const crows = ["grch38", "chm13"].map((rf) => { const c = s.ctyper?.[rf]; if (!c) return "";
+    return `<tr><td class="mono">ctyper · ${REFNAME[rf]} reads</td><td class="num">${c.SMN1}</td><td class="num">${c.SMN2}</td><td class="num">${c.SMN_partial}</td><td class="mono">${c.HBA_alleles} allele${c.HBA_alleles == 1 ? "" : "s"}</td><td class="num">${c.HBA_total}</td></tr>`; }).join("");
+  box("Paralog-aware callers", `<div class="scroll"><table><thead><tr><th>caller</th><th class="num">SMN1</th><th class="num">SMN2</th><th class="num">Δ7-8</th><th>HBA</th><th class="num">α total</th></tr></thead><tbody>${rows.replace(/<td class="mono">(4\.\d\.\d)<\/td>/g, '<td class="mono">DRAGEN $1</td>')}${crows}</tbody></table></div>` +
+    (s.ctyper ? `<p class="note">ctyper: k-mer genotyping against HPRC/CPC/HGSVC pangenome alleles, run here on the region slices. Δ7-8 column = SMN alleles with only part of the transcript.</p>` : ""));
   const r = LAST?.[s.id];
   if (r?.SMN) {
     const d = document.createElement("div"); d.className = "sub"; d.innerHTML = `<h3>Bayes v0 posterior · SMN1 × SMN2 · ${REFNAME[state.ref]}</h3>`; host.appendChild(d);
@@ -493,11 +497,12 @@ function drawCard() {
 function caveats() {
   const items = [
     "Truth is sequence-based typing of HPRC release-2 assemblies (GRCh38 SMN1 exons 1–8 and HBA2 projected onto each haplotype's locus; c.840 decides SMN1 vs SMN2). A haplotype counts only if one contig carries every copy plus unique anchor genes on both sides; fragmented loci are missing data, never copy number 0.",
-    "Locityper's public database (326 loci) has no locus for SMN1/SMN2 or HBA1/HBA2, so no pangenome-haplotype genotyper is on the scoreboard for those genes. It does cover CBS (chr21 demo). The pangenome view was built here from the assemblies for illustration; no reads were genotyped against it.",
+    "Locityper is labelled 'not run' on purpose: it aligns reads internally (this project does no read mapping), its public database (326 loci) has no SMN1/SMN2 or HBA1/HBA2 locus, and the SMN duplication block is 1–3 Mb and differs between haplotypes. Its precomputed tables only cover the chr21 CBS demo (data/tables/locityper_*.tsv). The pangenome graphs in this page were built from assemblies for illustration; no reads were aligned to them.",
     "Naive depth uses per-gene normalised depth rounded to the nearest integer with no GC or mappability correction; it is the baseline, not a straw man for read-depth callers in general.",
     "DRAGEN 4.4.7 results are labelled 'multigenome' after the bucket's reference name (hg38-alt_masked.cnv.graph…); DRAGEN targeted callers are paralog-aware and use their own internal normalisation.",
     "The Bayes v0 prior comes from DRAGEN 4.2.7 calls on the other 1kGP samples here, so with the prior on it partly inherits DRAGEN's errors. Its depth calibration assumes the median sample carries 4 copies per family (no truth used).",
-    "Assembly truth agrees with DRAGEN 4.2.7 on 201/206 SMN samples and 220/221 α-globin samples; the 6 samples that disagree are listed in data/tables/truth_crosscheck.tsv. ctyper's allele table is not scored: it groups HBA2/HBA1/HBAP1 into one allele and only covers year-1 haplotypes that resolved SMN.",
+    "Assembly truth agrees with DRAGEN 4.2.7 on 201/206 SMN samples and 220/221 α-globin samples; the 6 samples that disagree are listed in data/tables/truth_crosscheck.tsv. ctyper's precomputed allele table is not scored on its own (it only covers assemblies, not 1kGP reads).",
+    "ctyper (pangenome k-mer genotyper) was run here on the region slices with each sample's measured depth, not on whole CRAMs: reads aligned elsewhere (e.g. ~5% of SMN reads sit on GRCh38 alt contig KI270897v1) are missing. Its depth input is the haploid 31-mer depth (diploid read depth × 120/150 ÷ 2), calibrated on 5 truth samples. Its pangenome panel includes some HPRC samples, so a few truth samples are not independent tests for ctyper.",
   ];
   $("#caveats").innerHTML = items.map((x) => `<li>${x}</li>`).join("");
 }

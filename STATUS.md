@@ -42,3 +42,9 @@
 | 2026-11-04 12:31 | S7_pangraph_figs | DONE | SMN: 18 paths, HBA: 50 paths |
 | 2026-11-04 12:37 | S7_pangraph_figs | DONE | SMN: 18 paths, HBA: 50 paths |
 | 2026-11-04 12:39 | S6_explorer | DONE | reports/explorer/data.json (3.8 MB) |
+| 2026-11-04 12:51 | S8_ctyper_subset | DONE | 2 groups, 1.4 MB |
+| 2026-11-04 12:51 | S8_ctyper_subset | DONE | 4 groups, 2.9 MB |
+| 2026-11-04 13:11 | S8_ctyper | DONE | 1298/1298 sample×ref runs; data/tables/ctyper_calls.tsv |
+| 2026-11-04 13:12 | S3_concordance | DONE | 51 method×target cells; 11 disagreements in truth_crosscheck.tsv |
+| 2026-11-04 13:13 | S6_explorer | DONE | reports/explorer/data.json (3.9 MB) |
+| 2026-11-04 13:14 | P10_report | DONE | reports/MORNING_REPORT.md |

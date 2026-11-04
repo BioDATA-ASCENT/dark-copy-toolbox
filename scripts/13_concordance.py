@@ -6,7 +6,8 @@ Methods:
   naive_{ref}_mq{0,20}  round(norm_cn) per gene from data/tables/depth.{ref}.tsv.gz (no calibration at all)
   dragen_{4.0.3,4.2.7,4.4.7}   data/tables/dragen_calls.tsv (SMN2_all = SMN2_CN + SMN2_del78_CN; 4.0.3 has no HBA)
   bayes_{tag}           caller/bayes_cn.py outputs in data/tables/bayes_cn.*.tsv
-  ctyper_annotation     copies per assembly in ctyper's PangenomeAlleles table (assembly-based, so a check of
+  ctyper_{ref}          ctyper 1.0.5 run on our slices (scripts/18_ctyper_run.py)
+  (side table) ctyper annotation copies per assembly in ctyper's PangenomeAlleles table (assembly-based, so a check of
                         OUR truth typing, not a read-based caller); HPRC-R1-era assemblies, joined by sample
 
 Outputs: data/tables/calls_long.tsv (sample, method, target, call, truth)
@@ -87,6 +88,13 @@ def main():
                 m.update(SMN1=int(r["map_A"]), SMN2_all=int(r["map_B"]), SMN_total=int(r["map_total"]))
             else:
                 m["HBA_total"] = int(r["map_total"])
+
+    # ctyper run on our slices (scripts/18): k-mer genotyping against pangenome alleles
+    if os.path.exists(path("tables", "ctyper_calls.tsv")):
+        for r in tsv(path("tables", "ctyper_calls.tsv")):
+            calls[(r["sample"], f"ctyper_{r['ref']}")] = dict(
+                SMN1=int(r["SMN1"]), SMN2_all=int(r["SMN2"]) + int(r["SMN_partial"]), SMN_total=int(r["SMN_alleles"]),
+                HBA_total=int(r["HBA_total"]))
 
     # ctyper pangenome allele annotation: copies per assembly haplotype
     cty = path("precomputed", "ctyper", "PangenomeAlleles_typefix.v1.0.tsv")

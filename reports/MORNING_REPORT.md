@@ -4,7 +4,7 @@
 
 1. **Ready:** P0–P10 and all 5 stretch goals ran end to end. That covers 650 1kGP samples sliced on GRCh38 (648) and CHM13 (650), and HPRC R2 truth for 223 samples (206 usable for SMN, 221 for α-globin). The interactive **Dark Dosage Explorer** is at `reports/explorer/index.html` (also published privately at https://claude.ai/artifact/GSTPPWSrGeTLuTCjyX4Kq1; share it from its Share menu before the team can open it).
 2. **Results:** DRAGEN 4.x gets SMN1 right in 205/206 and α-globin total in 220/221. The Bayes v0 caller gets 94.7% SMN1 and 95.0% α-globin, or 94.2% / 86.9% without the prior. Naive MAPQ≥20 depth gets ≤0.5% of SMN1 calls right on both references. CHM13 fixes the chr21 CBS/U2AF1 false duplication: median CN goes from 0.27 at MAPQ≥20 on GRCh38 to 2.27 on CHM13.
-3. **Not ready:** Locityper has no SMN or HBA locus, so it only covers the chr21 CBS demo. ctyper is not scored (bundled HBA allele, incomplete SMN coverage). The α-globin HBA1/HBA2 split is not scored, only the total, because −α3.7 hybrids are typed as a single copy.
+3. **Pangenome tools (added 13:15 GMT):** ctyper (k-mer genotyping against pangenome alleles, no read mapping) was run on all 650 slices on both references. It gets SMN1 right in 91.3% and α-globin total in 76.5%, mostly by over-calling a third HBA allele; its GRCh38 and CHM13 runs agree 99.4% on SMN total. Locityper was **not run, by decision**: it needs read mapping and has no SMN/HBA locus. Local pggb pangenome graphs of both loci are in the explorer. The α-globin HBA1/HBA2 split is not scored, only the total, because −α3.7 hybrids are typed as a single copy.
 4. **Most important caveat:** Bayes v0 is not independent of DRAGEN. Its prior (leave-one-out) and its SMN per-site PSV bias are both calibrated on DRAGEN 4.2.7 calls. Quote the `noprior` rows when claiming what read depth alone achieves. Truth itself agrees with DRAGEN except in 6 samples (`data/tables/truth_crosscheck.tsv`).
 5. **First thing at 09:00:** open the explorer. Then look by hand at the 6 truth-vs-DRAGEN disagreements (HG00253, HG00597, HG00658, HG02668, NA18959, NA20905) in the sample card to decide whether truth or DRAGEN is wrong, before any accuracy number goes on a slide.
 
@@ -46,6 +46,17 @@
 | 2026-11-04 06:00 | S6_explorer | DONE | reports/explorer/data.json (3.6 MB) |
 | 2026-11-04 06:01 | S6_explorer | DONE | reports/explorer/data.json (3.6 MB) |
 | 2026-11-04 06:02 | P10_report | DONE | reports/MORNING_REPORT.md |
+| 2026-11-04 06:03 | P10_report | DONE | reports/MORNING_REPORT.md |
+| 2026-11-04 12:28 | S7_pangraph_fa_SMN | DONE | 18 paths (35.7 Mb) |
+| 2026-11-04 12:30 | S7_pangraph_fa_HBA | DONE | 50 paths (7.5 Mb) |
+| 2026-11-04 12:31 | S7_pangraph_figs | DONE | SMN: 18 paths, HBA: 50 paths |
+| 2026-11-04 12:37 | S7_pangraph_figs | DONE | SMN: 18 paths, HBA: 50 paths |
+| 2026-11-04 12:39 | S6_explorer | DONE | reports/explorer/data.json (3.8 MB) |
+| 2026-11-04 12:51 | S8_ctyper_subset | DONE | 2 groups, 1.4 MB |
+| 2026-11-04 12:51 | S8_ctyper_subset | DONE | 4 groups, 2.9 MB |
+| 2026-11-04 13:11 | S8_ctyper | DONE | 1298/1298 sample×ref runs; data/tables/ctyper_calls.tsv |
+| 2026-11-04 13:12 | S3_concordance | DONE | 51 method×target cells; 11 disagreements in truth_crosscheck.tsv |
+| 2026-11-04 13:13 | S6_explorer | DONE | reports/explorer/data.json (3.9 MB) |
 
 ## Data on disk
 
@@ -54,9 +65,9 @@
 - non-OK slice attempts: GRCh38 2, CHM13 0 (see logs/slices.tsv)
 - `refs`: 7.1G
 - `slices`: 31G
-- `precomputed`: 3.1G
+- `precomputed`: 5.5G
 - `truth`: 325M
-- `tables`: 196M
+- `tables`: 197M
 
 ## Truth (HPRC R2 assemblies)
 
@@ -88,6 +99,8 @@
 | bayes_chm13.mq0.noprior | 93.7% (193/206) | 92.7% (191/206) | 98.1% (202/206) | 87.3% (193/221) |
 | bayes_grch38.mq0 | 94.7% (195/206) | 93.2% (192/206) | 97.6% (201/206) | 95.0% (210/221) |
 | bayes_grch38.mq0.noprior | 94.2% (194/206) | 92.7% (191/206) | 97.6% (201/206) | 86.9% (192/221) |
+| ctyper_chm13 | 90.8% (187/206) | 93.7% (193/206) | 92.2% (190/206) | 76.9% (170/221) |
+| ctyper_grch38 | 91.3% (188/206) | 93.2% (192/206) | 92.2% (190/206) | 76.5% (169/221) |
 | dragen_4.0.3 | 99.5% (205/206) | 98.1% (202/206) | 97.6% (201/206) | – |
 | dragen_4.2.7 | 99.5% (205/206) | 98.1% (202/206) | 97.6% (201/206) | 99.5% (220/221) |
 | dragen_4.4.7 | 99.5% (205/206) | 98.1% (202/206) | 97.6% (201/206) | 99.5% (220/221) |
@@ -117,6 +130,12 @@ Full table: `data/tables/concordance.tsv`; per-call rows `data/tables/calls_long
 
 - db loci overlapping our windows: CBS (CBS,U2AF1,CRYAA), HBM (HBZ,HBM), MARVELD2 (MARVELD2)
 - **No Locityper locus contains SMN1/SMN2 or HBA1/HBA2** → no Locityper-implied CN for those genes (`data/tables/locityper_cn.tsv` says so). LOO benchmark rows: `data/tables/locityper_loo.tsv`; 1kGP genotypes (with `circular` flag): `data/tables/locityper_1kgp.tsv`.
+- **Status: NOT RUN on our samples, by decision.** Locityper aligns reads to candidate haplotypes internally, and this project does no read mapping. SMN would also need a 1–3 Mb locus with unique flanks. ctyper (k-mer counting) is the pangenome genotyper used instead.
+
+## ctyper (run here on region slices)
+
+- 1298 sample×reference runs; k-mer genotyping against HPRC/CPC/HGSVC pangenome alleles, no read mapping. Input = our slices + measured depth (haploid 31-mer depth = read depth × 120/150 ÷ 2, calibrated on 5 truth samples). Calls: `data/tables/ctyper_calls.tsv`; scored in the concordance table.
+- Caveat: slices miss reads aligned outside our windows (~5% of SMN reads sit on GRCh38 alt KI270897v1); ctyper's allele panel includes some HPRC samples, so those truth samples are not independent.
 
 ## Precomputed
 
@@ -141,9 +160,13 @@ Full table: `data/tables/concordance.tsv`; per-call rows `data/tables/calls_long
 - 2026-11-04 05:35 | P6 | HG00619/HG00620 GRCh38 have no CRAI in the S3 index → 648/650 GRCh38 slices; accepted (<1% loss), no fallback attempted.
 - 2026-11-04 05:35 | P8 | Truth sanity: 206/223 samples usable for SMN, 221/223 for HBA; HBA totals 4 (189), 3 (23), 5 (6), 2 (2), 6 (1); −α3.7 haplotypes appear as a single HBA1-like copy (hybrid), so HBA1/HBA2 split is not scored, only HBA_total.
 - 2026-11-04 06:00 | S3 | ctyper PangenomeAlleles annotation dropped from scoring: HBA alleles are a bundled HBA2,HBA1,HBAP1 group and SMN alleles cover only R1 haplotypes that resolved the locus (50% 'accuracy' = coverage artefact). Counts kept in data/tables/ctyper_annotation_counts.tsv.
+- 2026-11-04 12:40 | S7 | Pangenome view added on request: local pggb 0.7.4 graphs (own env pggb074; pggb 0.5.3 from bioconda is incompatible with current wfmash) from 16 SMN / 48 HBA complete HPRC R2 haplotypes + GRCh38 + CHM13, anchor to anchor, fetched by remote faidx (no whole assemblies). Illustration only: no reads genotyped against the graphs. SMN: 35.7 Mb of paths collapse into a 1.01 Mb graph.
+- 2026-11-04 12:40 | S7 | HG00253#2 assembly walks the whole HBZ..HBQ1 block twice (~150 kb), giving truth HBA_total 6, but its reads show HBZ at 2.03 copies (pop median 2.14) → most likely an assembly false duplication; DRAGEN's 4 is probably right. Not auto-corrected in truth; flagged for the team.
+- 2026-11-04 12:40 | S7 | Long NAIP/SERF1 bars in some SMN haplotypes in the structure plot come from CAT gene spans, not our typing; the SMN1/SMN2 boxes are our truth calls.
+- 2026-11-04 13:05 | S8 | Locityper NOT run (user decision: no read mapping; Locityper aligns reads internally). Labelled 'not run' in explorer scoreboard + caveats and in the report. ctyper (k-mer counting) is the pangenome genotyper instead.
 
 
 ## Free disk
 
-- 223 GB free under data/
+- 220 GB free under data/
 
