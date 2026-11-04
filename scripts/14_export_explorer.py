@@ -172,6 +172,9 @@ def main():
     data["control"] = {"gene": ctrl, "truth": ct}
     sim = os.path.join(OUT, "sim.json")
     data["sim"] = json.load(open(sim)) if os.path.exists(sim) else None
+    cmp_fn = os.path.join(OUT, "sim_compare.json")   # 24_sim_compare.py: counter vs ctyper on the same simulated reads
+    if data["sim"] is not None and os.path.exists(cmp_fn):
+        data["sim"]["compare"] = json.load(open(cmp_fn))
     pg = os.path.join(OUT, "pangraph.json")
     data["pangraph"] = json.load(open(pg)) if os.path.exists(pg) else {}
     data["meta"] = dict(n_selected=len(sel), n_truth=len(truth), refs=["grch38", "chm13"],

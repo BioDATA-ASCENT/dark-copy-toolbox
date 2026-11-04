@@ -94,3 +94,12 @@
 | 2026-11-04 20:27 | S6_explorer | DONE | reports/explorer/data.json (11.2 MB) |
 | 2026-11-04 20:27 | S13_calls | DONE | docs/calls/*.tsv: 650 people × 6 methods × 5 targets |
 | 2026-11-04 20:27 | S9_site | DONE | docs/index.html + docs/outline.html + docs/calls.html |
+| 2026-11-04 20:53 | S14_sim_compare | DONE | 10x: counter 3/3, ctyper 2/3; 5x: counter 60/60, ctyper 14/60; 2x: counter 47/60, ctyper 0/60 |
+| 2026-11-04 20:54 | S14_sim_compare | DONE | 30x: counter 9/9, ctyper 8/9; 10x: counter 3/3, ctyper 2/3; 5x: counter 60/60, ctyper 14/60; 2x: counter 47/60, ctyper 0/60 |
+| 2026-11-04 20:57 | S14_sim_compare | DONE | 30x: counter 9/9, ctyper 8/9; 10x: counter 3/3, ctyper 2/3; 5x: counter 60/60, ctyper 14/60; 2x: counter 47/60, ctyper 0/60 |
+| 2026-11-04 21:01 | S6_explorer | DONE | reports/explorer/data.json (11.3 MB) |
+| 2026-11-04 21:01 | S9_site | DONE | docs/index.html + docs/outline.html + docs/calls.html |
+| 2026-11-04 21:01 | S6_explorer | DONE | reports/explorer/data.json (11.3 MB) |
+| 2026-11-04 21:01 | S9_site | DONE | docs/index.html + docs/outline.html + docs/calls.html |
+| 2026-11-04 21:02 | S6_explorer | DONE | reports/explorer/data.json (11.3 MB) |
+| 2026-11-04 21:02 | S9_site | DONE | docs/index.html + docs/outline.html + docs/calls.html |

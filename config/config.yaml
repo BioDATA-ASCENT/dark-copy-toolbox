@@ -146,6 +146,8 @@ simulation:
   kmer_step: 4            # keep every 4th ctrl/gene k-mer (panel size for the browser)
   eval_coverages: [2, 5, 10]
   eval_reps: 20
+  high_coverage: 30     # S14: fresh 30x simulations (not published) so ctyper is also tested at standard coverage
+  high_reps: 3
   patients:
     - {id: A, label: "SMA-affected", haplotypes: ["HG02132#1#CM086896.1", "HG03583#2#JBHIKB010000004.1"], SMN1: 0, SMN2: 4}
     - {id: B, label: "SMA carrier", haplotypes: ["HG03583#2#JBHIKB010000004.1", "NA18948#2#JBKACD010000005.1"], SMN1: 1, SMN2: 3}

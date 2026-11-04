@@ -24,6 +24,7 @@
   --psv: #eda100;
   --smn1: #2a78d6; --smn2: #eb6834; --smn2d: #f2b48c; --other-gene: #9aa7b8; --anchor-gene: #d3d8de;
   --good: #0ca30c; --bad: #d03b3b; --warn: #fab219;
+  --m-counter: #1baf7a; --m-ctyper: #6250d6;   /* method colours, step 6 (validated pair) */
   --seq-0: #f0f4f9; --seq-1: #cde2fb; --seq-2: #86b6ef; --seq-3: #3987e5; --seq-4: #1c5cab; --seq-5: #0d366b;
   --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
   --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -35,7 +36,7 @@
     --ground: #0e1116; --surface: #161a20; --ink: #eef1f4; --ink-2: #b7c0cb; --muted: #87919d;
     --rule: #262c35; --axis: #3a424d; --accent: #9db8e0; --band: rgba(157, 184, 224, 0.13); --band-line: rgba(157, 184, 224, 0.4);
     --mq0: #3987e5; --mq20: #d95926; --gene: #9db8e0; --gene-dup: #c497d6; --psv: #c98500;
-    --seq-0: #1d232b; --seq-1: #184f95; --seq-2: #256abf; --seq-3: #3987e5; --seq-4: #86b6ef; --seq-5: #cde2fb;
+    --m-counter: #199e70; --m-ctyper: #9085e9; --seq-0: #1d232b; --seq-1: #184f95; --seq-2: #256abf; --seq-3: #3987e5; --seq-4: #86b6ef; --seq-5: #cde2fb;
   }
 }
 :root[data-theme="dark"] {
@@ -43,7 +44,7 @@
   --ground: #0e1116; --surface: #161a20; --ink: #eef1f4; --ink-2: #b7c0cb; --muted: #87919d;
   --rule: #262c35; --axis: #3a424d; --accent: #9db8e0; --band: rgba(157, 184, 224, 0.13); --band-line: rgba(157, 184, 224, 0.4);
   --mq0: #3987e5; --mq20: #d95926; --gene: #9db8e0; --gene-dup: #c497d6; --psv: #c98500;
-  --seq-0: #1d232b; --seq-1: #184f95; --seq-2: #256abf; --seq-3: #3987e5; --seq-4: #86b6ef; --seq-5: #cde2fb;
+  --m-counter: #199e70; --m-ctyper: #9085e9; --seq-0: #1d232b; --seq-1: #184f95; --seq-2: #256abf; --seq-3: #3987e5; --seq-4: #86b6ef; --seq-5: #cde2fb;
 }
 * { box-sizing: border-box; }
 body { background: var(--ground); color: var(--ink); font: 15px/1.55 var(--f-body);
@@ -162,18 +163,86 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
 .glossary dt { font-weight: 600; color: var(--ink); }
 .glossary dd { margin: 0; color: var(--ink-2); }
 @media (max-width: 600px) { .glossary { grid-template-columns: 1fr; } .glossary dd { margin-bottom: 6px; } }
-.patients { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
-.pcard { border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; display: grid; gap: 6px; background: var(--surface); font-size: 13.5px; color: var(--ink-2); }
-.pcard.active { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent); }
-.pcard b { font-family: var(--f-display); font-size: 17px; color: var(--ink); }
-.pcard .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.pcard button { font: 500 13px var(--f-body); border: 1px solid var(--accent); background: var(--accent); color: var(--surface); border-radius: 5px; padding: 5px 10px; cursor: pointer; }
-.pcard a { font-size: 12.5px; color: var(--accent); }
+/* ---- step 6: patient genotyping (counter vs ctyper) ---- */
 .drop { border: 1.5px dashed var(--axis); border-radius: 6px; padding: 12px 14px; font-size: 13.5px; color: var(--ink-2); }
 .drop.over { border-color: var(--accent); background: var(--band); }
 .filebtn { color: var(--accent); text-decoration: underline; cursor: pointer; }
-.verdict { font: 700 22px/1.2 var(--f-display); font-stretch: 85%; color: var(--ink); }
-.verdict.sma { color: var(--bad); } .verdict.carrier { color: var(--psv); } .verdict.ok { color: var(--good); }
+.pt-panel { gap: 18px; }
+.pt-pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+.ptc { text-align: left; font: inherit; color: var(--ink-2); background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 12px 14px;
+  display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: center; cursor: pointer; transition: border-color .15s, box-shadow .15s; }
+.ptc:hover { border-color: var(--accent); }
+.ptc[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 28%, transparent); }
+.ptc:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ptc .av { grid-row: span 3; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; font: 800 22px var(--f-display);
+  background: var(--accent); color: var(--surface); }
+.ptc .nm { font: 700 16px var(--f-display); color: var(--ink); }
+.ptc .meta { font-size: 12.5px; }
+.ptc .gt { font: 500 12px var(--f-mono); color: var(--muted); }
+.ptc .gt.shown { color: var(--ink); }
+.ptc .gt a { color: var(--accent); }
+.ghostbtn { font: 500 13px var(--f-body); background: transparent; color: var(--accent); border: 1px solid var(--accent); border-radius: 5px; padding: 6px 11px; cursor: pointer; }
+.ghostbtn:hover { background: var(--accent); color: var(--surface); }
+.ghostbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.revealctl { margin-left: auto; }
+.readview { border: 1px solid var(--rule); border-radius: 8px; background: color-mix(in srgb, var(--ground) 55%, var(--surface)); padding: 12px 14px; display: grid; gap: 10px; }
+.rv-head { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; }
+.rv-head h3 { margin: 0; }
+.rv-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--ink-2); align-items: center; }
+.rv-legend .sw { display: inline-block; width: 18px; height: 12px; border-radius: 2px; vertical-align: -1px; margin-right: 6px; }
+.rv-rows { display: grid; gap: 4px; overflow-x: auto; padding-bottom: 4px; }
+.rv-row { display: grid; grid-template-columns: 112px auto; gap: 10px; align-items: center; }
+.rv-tag { font: 600 10.5px var(--f-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.rv-seq { font: 11.5px/1.7 var(--f-mono); white-space: pre; color: var(--muted); letter-spacing: 0.02em; }
+.k-c { background: color-mix(in srgb, var(--m-counter) 26%, transparent); color: var(--ink); }
+.k-g { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--ink); }
+.k-A { background: color-mix(in srgb, var(--smn1) 24%, transparent); color: var(--ink); }
+.k-B { background: color-mix(in srgb, var(--smn2) 24%, transparent); color: var(--ink); }
+.L-A, .L-B { font-weight: 700; color: #fcfcfb; border-radius: 2px; padding: 0 1px; }
+.L-A { background: var(--smn1); } .L-B { background: var(--smn2); }
+.duel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 860px) { .duel { grid-template-columns: 1fr; } }
+.mcard { border: 1px solid var(--rule); border-top: 4px solid var(--mc); border-radius: 8px; background: var(--surface); padding: 14px 16px 16px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.mcard.counter { --mc: var(--m-counter); } .mcard.ctyper { --mc: var(--m-ctyper); }
+.mhead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.mhead h3 { margin: 0; font: 700 18px var(--f-display); color: var(--ink); display: flex; align-items: center; gap: 8px; }
+.mhead .tag { font: 500 11.5px var(--f-mono); color: var(--muted); }
+.mdot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--m-counter); vertical-align: 0; margin-right: 6px; }
+.mdot.ctyper { background: var(--m-ctyper); border-radius: 2px; }
+.bigcall { display: flex; gap: 28px; align-items: flex-end; flex-wrap: wrap; }
+.bigcall div { display: grid; gap: 0; }
+.bigcall .n { font: 800 56px/0.95 var(--f-display); font-stretch: 80%; font-variant-numeric: tabular-nums; }
+.bigcall .l { font: 600 12px var(--f-mono); color: var(--muted); letter-spacing: 0.04em; }
+.bigcall .s1 .n { color: var(--smn1); } .bigcall .s2 .n { color: var(--smn2); }
+.vpill { justify-self: start; display: inline-flex; align-items: center; gap: 8px; font: 600 14px var(--f-body); padding: 6px 12px 6px 10px; border-radius: 999px; border: 1px solid; }
+.vpill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.vpill.sma { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); background: color-mix(in srgb, var(--bad) 9%, var(--surface)); }
+.vpill.carrier { color: color-mix(in srgb, var(--psv) 75%, var(--ink)); border-color: color-mix(in srgb, var(--psv) 55%, transparent); background: color-mix(in srgb, var(--psv) 12%, var(--surface)); }
+.vpill.ok { color: var(--good); border-color: color-mix(in srgb, var(--good) 45%, transparent); background: color-mix(in srgb, var(--good) 9%, var(--surface)); }
+.vpill.na { color: var(--muted); border-color: var(--rule); }
+.truthline { font: 500 12.5px var(--f-mono); }
+.truthline.right { color: var(--good); } .truthline.wrong { color: var(--bad); }
+.how { display: grid; gap: 8px; }
+.how h4 { margin: 0; }
+.how table td { white-space: normal; }
+.alle { display: grid; grid-template-columns: minmax(0, 1fr) auto 120px 42px; gap: 4px 10px; align-items: center; font-size: 12.5px; }
+.alle .an { font: 12px var(--f-mono); color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gchip { font: 600 11px var(--f-mono); color: #fcfcfb; border-radius: 3px; padding: 1px 6px; }
+.gchip.SMN1 { background: var(--smn1); } .gchip.SMN2 { background: var(--smn2); } .gchip.other { background: var(--axis); color: var(--ink); }
+.cbar { height: 8px; border-radius: 4px; background: var(--rule); position: relative; overflow: hidden; }
+.cbar i { position: absolute; inset: 0 auto 0 0; background: var(--m-ctyper); border-radius: 4px; }
+.cbar::after { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--ink-2); opacity: .5; }
+.alle .cv { font: 12px var(--f-mono); color: var(--ink); text-align: right; }
+.runstrip { display: grid; gap: 6px; }
+.runs { display: flex; flex-wrap: wrap; gap: 4px; }
+.runs b { width: 22px; height: 22px; border-radius: 4px; display: grid; place-items: center; font: 600 11.5px var(--f-mono); background: color-mix(in srgb, var(--mc) 16%, var(--surface)); color: var(--ink); border: 1.5px solid transparent; }
+.runs b.cur { border-color: var(--ink); }
+.runs b.wrong { background: color-mix(in srgb, var(--bad) 14%, var(--surface)); color: var(--bad); border-style: dashed; border-color: var(--bad); }
+.runs b.wrong.cur { border-style: solid; }
+.cmdline { font: 11.5px/1.5 var(--f-mono); background: var(--ground); border: 1px solid var(--rule); border-radius: 5px; padding: 7px 9px; color: var(--ink-2); overflow-x: auto; white-space: pre; }
+.covchart svg { width: 100%; height: auto; display: block; }
+.whybox { border-left: 3px solid var(--m-ctyper); padding: 8px 12px; font-size: 14px; color: var(--ink-2); background: color-mix(in srgb, var(--m-ctyper) 6%, var(--surface)); border-radius: 0 6px 6px 0; max-width: 100ch; }
+.whybox b { color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
@@ -324,25 +393,47 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
 
   <!-- ============================================================ STEP 7 -->
   <section class="step" id="step7" aria-labelledby="h-pt">
-    <div class="step-head"><span class="badge">Step 6</span><h2 id="h-pt">Genotype a patient: no alignment needed</h2></div>
+    <div class="step-head"><span class="badge">Step 6</span><h2 id="h-pt">Genotype a patient: two methods, no alignment</h2></div>
     <div class="explain">
-      <div><h4>What you're looking at</h4><p>Three simulated patients, each made of two real HPRC SMN haplotypes with known copy numbers, sequenced in silico with low-coverage 150 bp reads. We genotype them <b>without aligning a single read</b>: the browser scans every read for short marker sequences (31-mers) and turns the counts into copy numbers with two simple ratios. You can also drop in your own FASTQ.</p></div>
-      <div><h4>The three counts</h4><ul>
-        <li><b>Control reads</b>: reads containing a MARVELD2 marker, a single-copy gene, so they tell us what 2 copies look like at this coverage.</li>
-        <li><b>SMN reads</b>: reads containing a marker shared by SMN1 and SMN2. SMN reads ÷ control reads × 2 ≈ total SMN copies.</li>
-        <li><b>Twin-site reads</b>: at each of the 13 positions where the twins differ, does the read carry the SMN1 or the SMN2 letter? The SMN1 share says how the total splits.</li>
-        <li><b>The call</b>: total = round(2 × SMN reads ÷ control reads, adjusted for gene length); SMN1 = round(total × SMN1 share); SMN2 = the rest.</li></ul></div>
+      <div><h4>What you're looking at</h4><p>Three simulated patients. Each is two real HPRC SMN haplotypes with known copy numbers, “sequenced” into 150 bp short reads at low coverage. Two methods genotype the <b>same reads</b> without aligning a single one: our copy-number counter and ctyper. Pick a patient, look at the reads, and compare the two answers.</p></div>
+      <div><h4>The two methods</h4><ul>
+        <li><span class="mdot counter"></span><b>Copy-number counter</b>: counts reads carrying a marker from a single-copy control gene, from SMN, and from the 13 positions where SMN1 and SMN2 differ. Two ratios give the total and the SMN1 share.</li>
+        <li><span class="mdot ctyper"></span><b>ctyper</b>: counts thousands of 31-mers from ~340 SMN alleles found in real assemblies, then finds the mix of alleles that explains the counts. Run offline on the same reads.</li></ul></div>
     </div>
-    <div class="panel">
+
+    <div class="panel pt-panel">
+      <div class="pt-pick" id="patients" role="group" aria-label="Choose a patient"></div>
       <div class="controls">
         <div class="seg" role="group" aria-label="Coverage" id="covSeg"></div>
-        <label class="ctl" for="cReveal"><input type="checkbox" id="cReveal"> reveal the true genotype</label>
+        <button type="button" class="ghostbtn" id="resample">Draw another sample</button>
+        <span class="note" id="sampleNote"></span>
+        <label class="ctl revealctl" for="cReveal"><input type="checkbox" id="cReveal"> reveal the true genotype</label>
       </div>
-      <div class="patients" id="patients"></div>
-      <div class="drop" id="drop"><b>Try your own reads:</b> drop a FASTQ or FASTQ.gz of the SMN region here, or <label class="filebtn">choose a file<input type="file" id="fqFile" accept=".fq,.fastq,.gz" hidden></label>. It is read locally in your browser; nothing is uploaded.<span id="fqStatus" class="mono"></span></div>
-      <div class="grid2" id="ptResult"></div>
+
+      <div class="readview">
+        <div class="rv-head"><h3>Peek at the reads</h3><span class="note" id="rvNote"></span></div>
+        <div class="rv-legend">
+          <span><i class="sw k-c"></i>control-gene marker (MARVELD2)</span><span><i class="sw k-g"></i>SMN marker (both twins)</span>
+          <span><i class="sw k-A"></i><b class="L-A">C</b> SMN1 letter</span><span><i class="sw k-B"></i><b class="L-B">T</b> SMN2 letter</span>
+        </div>
+        <div class="rv-rows" id="readRows"></div>
+      </div>
+
+      <div class="duel">
+        <article class="mcard counter" id="mCounter" aria-live="polite"></article>
+        <article class="mcard ctyper" id="mCtyper" aria-live="polite"></article>
+      </div>
     </div>
-    <div class="takeaway"><b>Key message</b> With a handful of k-mers and no alignment, even 5x reads are enough to separate an SMA patient (no SMN1), a carrier (1) and an unaffected person (2): simulation calls were exact in 60/60 runs at 10x, 58/60 at 5x and 48/60 at 2x. The control gene keeps the depth honest, and the twin sites do the rest.</div>
+
+    <div class="panel">
+      <div class="panel-head"><h3>How low can the coverage go?</h3><p>Share of read sets where each method calls SMN1 correctly: the number that decides SMA, carrier or unaffected.</p></div>
+      <div class="covchart" id="covChart"></div>
+      <div class="whybox"><b>Why ctyper falls apart below 10x.</b> ctyper treats any k-mer seen fewer than 3 times as absent (it's in its source code). At 5x, one copy gives only ~2 counts per k-mer, so most of the evidence is thrown away, and the regression is left guessing. The counter counts <i>reads</i>, and a read counts once if it carries any marker, so every read still contributes. At standard 30x, both methods are right.</div>
+      <details><summary>Table view</summary><div class="scroll" id="covTable"></div></details>
+    </div>
+
+    <div class="drop" id="drop"><b>Try your own reads:</b> drop a FASTQ or FASTQ.gz of the SMN region here, or <label class="filebtn">choose a file<input type="file" id="fqFile" accept=".fq,.fastq,.gz" hidden></label>. The counter runs locally in your browser; nothing is uploaded. ctyper needs the command line.<span id="fqStatus" class="mono"></span></div>
+    <div class="takeaway"><b>Key message</b> No alignment is needed to tell an SMA patient (no SMN1), a carrier (1) and an unaffected person (2) apart. At 30x both methods get it right. At low coverage, a handful of well-chosen markers counted read by read stays reliable down to 5x, while ctyper's k-mer regression needs about 10x or more.</div>
   </section>
 
   <!-- ============================================================ CAVEATS -->
@@ -760,8 +851,9 @@ function drawPangraph() {
     ? "Haplotypes differ by up to ~2 Mb in length and in the order, orientation and number of SMN/NAIP/SERF1/GTF2H2 copies. A linear reference can only hold one of these layouts, and the graph has to fold all copies onto shared nodes, so neither tells you directly which copy a short read came from."
     : "Most haplotypes carry HBA2+HBA1 (2 copies); the −α3.7/−α4.2 deletions leave one, and triplications add one. HG00253#2 walks the whole HBZ–HBQ1 block twice (~150 kb), but its reads show normal HBZ depth (2.03 copies), which points to a false duplication in that assembly: truth says 6 copies, the reads suggest 4.";
 }
-// ---------------------------------------------------------------- step 6 (id step7): simulated patients (alignment-free)
-state.cov = String(D.sim ? D.sim.patients[0].coverage : 10); state.pt = null;
+// ---------------------------------------------------------------- step 6 (id step7): genotype a patient, counter vs ctyper
+const CMP = D.sim?.compare || null;
+state.pt = "A"; state.cov = String(D.sim ? D.sim.patients[0].coverage : 10); state.rep = 0; state.upload = null;
 function rcomp(x) { let o = ""; for (let i = x.length - 1; i >= 0; i--) o += { A: "T", C: "G", G: "C", T: "A" }[x[i]] || "N"; return o; }
 let PLUT = null;
 function panelLut() { if (PLUT) return PLUT; const P = D.sim.panel, m = new Map();
@@ -771,9 +863,8 @@ function panelLut() { if (PLUT) return PLUT; const P = D.sim.panel, m = new Map(
 function countRead(seq, lut, K) { let c = 0, g = 0; const st = {};
   for (let i = 0; i + K <= seq.length; i++) { const x = lut.get(seq.substr(i, K)); if (!x) continue; if (x[0] === "c") c = 1; else if (x[0] === "g") g = 1; else st[x[1]] = x[0]; }
   return c || g || Object.keys(st).length ? [c, g, st] : null; }
-function mulberry(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-function summariseHits(hits, frac, seed = 11) { const r = mulberry(seed); let Rc = 0, Rg = 0, X = 0, N = 0;
-  for (const [c, g, st] of hits) { if (frac < 1 && r() > frac) continue; Rc += c; Rg += g; for (const v of Object.values(st)) { N++; if (v === "A") X++; } }
+function summariseHits(hits) { let Rc = 0, Rg = 0, X = 0, N = 0;
+  for (const [c, g, st] of hits) { Rc += c; Rg += g; for (const v of Object.values(st)) { N++; if (v === "A") X++; } }
   return { Rc, Rg, X, N }; }
 function genotypeCounts(cnt) { // two transparent ratios (no model): total from depth, split from the twin-site letters
   const P = D.sim.panel; const per = cnt.Rc / 2 * P.L.gene / P.L.ctrl;
@@ -781,51 +872,169 @@ function genotypeCounts(cnt) { // two transparent ratios (no model): total from 
   const share = cnt.N ? cnt.X / cnt.N : NaN, A = Number.isFinite(share) ? Math.min(T, Math.round(T * share)) : 0;
   return { A, B: T - A, T, total, share, per };
 }
-function verdictOf(A) { if (A === 0) return ["Consistent with SMA: no SMN1 copy found", "sma"]; if (A === 1) return ["SMA carrier: one SMN1 copy", "carrier"];
-  return [`Not a carrier: ${A} SMN1 copies` + (A === 2 ? " (note: a 2+0 ‘silent carrier’ can't be ruled out from copy number alone)" : ""), "ok"]; }
-function drawPatients() {
-  if (!D.sim) { $("#step7").hidden = true; return; }
+function verdictOf(A) { return A === 0 ? ["SMA: no SMN1 copy", "sma"] : A === 1 ? ["SMA carrier: one SMN1 copy", "carrier"] : [`Unaffected: ${A} SMN1 copies`, "ok"]; }
+const patientOf = (id) => D.sim.patients.find((p) => p.id === id);
+const runsOf = (id, cov) => CMP?.runs?.[id]?.[cov] || [];
+function currentRun() { const rs = runsOf(state.pt, state.cov); return rs.length ? rs[state.rep % rs.length] : null; }
+const fmtInt = (n) => n.toLocaleString("en-US");
+const truthTxt = (p) => `SMN1 ${p.SMN1} · SMN2 ${p.SMN2}`;
+
+function drawPatientCards() {
   const reveal = $("#cReveal").checked;
-  $("#patients").innerHTML = D.sim.patients.map((p) => `<div class="pcard ${state.pt === p.id ? "active" : ""}"><b>Patient ${p.id}</b>
-    <span class="mono">${reveal ? `${p.label} · truth SMN1 = ${p.SMN1}, SMN2 = ${p.SMN2}` : "genotype hidden"}</span>
-    <span>${(p.n_reads / 1000).toFixed(0)}k reads simulated at ${p.coverage}x · haplotypes ${p.haplotypes.map((h) => h.split("#").slice(0, 2).join("#")).join(" + ")}</span>
-    <div class="row"><button type="button" data-pt="${p.id}">Genotype</button><a href="https://jacgonisa.github.io/dark-copy-toolbox/${p.fastq}" target="_blank" rel="noopener">FASTQ (${p.fastq_mb} MB)</a></div></div>`).join("");
-  $("#patients").querySelectorAll("button").forEach((b) => (b.onclick = () => { state.pt = b.dataset.pt; drawPatients(); }));
-  if (state.pt) { const p = D.sim.patients.find((x) => x.id === state.pt);
-    if (p) showGenotype(summariseHits(p.hits, Math.min(1, +state.cov / p.coverage)), `Patient ${p.id} at ${Math.min(+state.cov, p.coverage)}x`, reveal ? p : null); else if (state.upload) showGenotype(state.upload.cnt, state.upload.name, null); }
+  const cards = D.sim.patients.map((p) => `<button type="button" class="ptc" data-pt="${p.id}" aria-pressed="${state.pt === p.id}">
+      <span class="av">${p.id}</span><span class="nm">Patient ${p.id}</span>
+      <span class="meta">${fmtInt(p.n_reads)} reads · ${p.coverage}x · 150 bp</span>
+      <span class="gt ${reveal ? "shown" : ""}">${reveal ? `${p.label} · ${truthTxt(p)}` : "genotype hidden"}</span></button>`);
+  if (state.upload) cards.push(`<button type="button" class="ptc" data-pt="upload" aria-pressed="${state.pt === "upload"}"><span class="av">↑</span><span class="nm">Your file</span>
+      <span class="meta">${esc(state.upload.name)}</span><span class="gt">${fmtInt(state.upload.n)} reads scanned</span></button>`);
+  $("#patients").innerHTML = cards.join("");
+  $("#patients").querySelectorAll(".ptc").forEach((b) => (b.onclick = () => { state.pt = b.dataset.pt; state.rep = 0; drawPatients(); }));
 }
-function showGenotype(cnt, title, truth) {
-  const r = genotypeCounts(cnt), host = $("#ptResult"); host.innerHTML = "";
-  const [vt, vc] = verdictOf(r.A);
-  const left = document.createElement("div"); left.className = "sub";
-  left.innerHTML = `<h3>${title}</h3><div class="verdict ${vc}">${vt}</div>
-    <p class="mono">call SMN1 = ${r.A}, SMN2 = ${r.B}</p>
-    ${truth ? `<p class="mono">truth SMN1 = ${truth.SMN1}, SMN2 = ${truth.SMN2} → ${truth.SMN1 === r.A && truth.SMN2 === r.B ? "✓ correct" : "✗ wrong"}</p>` : ""}
-    <table><tbody>
-      <tr><td>Control reads (MARVELD2, 2 copies)</td><td class="num">${cnt.Rc}</td></tr>
-      <tr><td>SMN reads (SMN1 + SMN2)</td><td class="num">${cnt.Rg}</td></tr>
-      <tr><td>→ estimated total SMN copies</td><td class="num">${r.total.toFixed(2)} → ${r.T}</td></tr>
-      <tr><td>Twin-site reads with the SMN1 letter</td><td class="num">${cnt.X} / ${cnt.N} (${cnt.N ? (100 * r.share).toFixed(0) : "–"}%)</td></tr>
-      <tr><td>→ SMN1 = ${r.T} × ${cnt.N ? r.share.toFixed(2) : "–"}</td><td class="num">${(r.T * r.share).toFixed(2)} → ${r.A}</td></tr>
-    </tbody></table>
-    <p class="note">${r.A === 0 ? "No reads carry SMN1 letters at the twin sites, while the depth says SMN copies are present: those are all SMN2. More SMN2 copies usually mean milder SMA." : r.A === 1 ? "About a quarter to a third of twin-site reads look like SMN1: one SMN1 copy among the total." : "Roughly half or more of twin-site reads look like SMN1."}</p>`;
-  host.appendChild(left);
-  // two gauges: estimated total on a 0–6 scale, SMN1 share with the share expected for each SMN1 count at this total
-  const d = document.createElement("div"); d.className = "sub"; d.innerHTML = `<h3>The two numbers behind the call</h3>`; host.appendChild(d);
-  const W = 460, H = 170, ML = 20, MR = 20, svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "copy-number gauges", style: "max-width:520px" }, d);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function drawReads() {
+  const host = $("#readRows");
+  if (state.pt === "upload") { host.innerHTML = `<p class="note">Your reads were scanned in the browser; ${fmtInt(state.upload.marked)} of ${fmtInt(state.upload.n)} carried a marker.</p>`; $("#rvNote").textContent = ""; return; }
+  const R = CMP?.reads?.[state.pt]; if (!R) { host.innerHTML = ""; return; }
+  const p = patientOf(state.pt);
+  $("#rvNote").innerHTML = `a few of ${fmtInt(R.n_reads)} reads from <a href="https://jacgonisa.github.io/dark-copy-toolbox/${p.fastq}" target="_blank" rel="noopener">patient ${p.id}'s FASTQ (${p.fastq_mb} MB)</a> · ${fmtInt(R.n_marked)} carry a marker · shown as sequenced, either strand`;
+  const TAG = { c: "control marker", g: "SMN marker", A: "SMN1 letter", B: "SMN2 letter" };
+  const row = (e) => {
+    const n = e.seq.length, cls = new Array(n).fill("");
+    for (const [s, t, k] of e.spans) for (let i = s; i < Math.min(t, n); i++) cls[i] = `k-${k}`;
+    for (const [pos, , ab] of e.sites) for (let i = Math.max(0, pos - 15); i <= Math.min(n - 1, pos + 15); i++) cls[i] = `k-${ab}`;
+    for (const [pos, , ab] of e.sites) cls[pos] = `L-${ab}`;
+    let h = "", i = 0;
+    while (i < n) { let j = i; while (j < n && cls[j] === cls[i]) j++; const t = e.seq.slice(i, j); h += cls[i] ? `<span class="${cls[i]}">${t}</span>` : t; i = j; }
+    const sites = e.sites.map(([, L, ab, sid]) => `${ab === "A" ? "SMN1" : "SMN2"} letter ${L} at ${sid.replace(/^SMN_\d+_/, "").replace(/_/g, " ")}`).join("; ");
+    return `<div class="rv-row"><span class="rv-tag">${TAG[e.kind]}</span><span class="rv-seq" title="${esc(sites || TAG[e.kind])}">${h}</span></div>`;
+  };
+  const kinds = new Set(R.examples.map((e) => e.kind));
+  host.innerHTML = R.examples.map(row).join("") +
+    (kinds.has("A") ? "" : `<div class="rv-row"><span class="rv-tag">SMN1 letter</span><span class="note">none: no read in this file carries an SMN1 letter at any of the 13 twin sites</span></div>`);
+}
+
+function vpill(A, truth) {
+  const [t, c] = verdictOf(A);
+  return `<span class="vpill ${c}">${t}</span>`;
+}
+function truthLine(a, b, p) {
+  if (!p || !$("#cReveal").checked) return "";
+  const ok = a === p.SMN1 && b === p.SMN2;
+  return `<span class="truthline ${ok ? "right" : "wrong"}">${ok ? "✓ matches the truth" : `✗ wrong: truth is ${truthTxt(p)}`}</span>`;
+}
+function runStrip(method) {
+  if (state.pt === "upload") return "";
+  const rs = runsOf(state.pt, state.cov), p = patientOf(state.pt), reveal = $("#cReveal").checked;
+  if (rs.length < 2) return "";
+  const cells = rs.map((r, i) => { const v = method === "counter" ? r.counter.SMN1 : r.ctyper?.SMN1;
+    const s2 = method === "counter" ? r.counter.SMN2 : r.ctyper?.SMN2;
+    const wrong = reveal && v !== p.SMN1;   // the strip shows SMN1, the clinically decisive call
+    return `<b class="${i === state.rep % rs.length ? "cur" : ""} ${wrong ? "wrong" : ""}" data-rep="${i}" title="sample ${i + 1}: SMN1 ${v ?? "–"}, SMN2 ${s2 ?? "–"}${wrong ? " (wrong)" : ""}">${v ?? "–"}</b>`; }).join("");
+  return `<div class="runstrip"><h4>SMN1 call in each of the ${rs.length} ${state.cov === "30" ? "independent 30x simulations" : `random ${state.cov}x samples`}${reveal ? " · dashed = wrong" : ""}</h4><div class="runs">${cells}</div></div>`;
+}
+function drawGauges(host, r) {
+  const W = 440, H = 150, ML = 14, MR = 14, svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "the two numbers behind the counter's call", style: "width:100%;max-width:480px;height:auto" }, host);
   const gauge = (y, label, max, val, ticks, fmt) => {
     const X = (v) => ML + Math.min(Math.max(v, 0), max) / max * (W - ML - MR);
     el("text", { x: ML, y: y - 12, style: `fill:${css("--ink-2")};font-family:var(--f-body);font-size:12px` }, svg).textContent = label;
     el("rect", { x: ML, y, width: W - ML - MR, height: 10, rx: 5, fill: css("--rule") }, svg);
     for (const [v, lab, hl] of ticks) { el("line", { x1: X(v), x2: X(v), y1: y - 3, y2: y + 13, stroke: css(hl ? "--ink" : "--axis"), "stroke-width": hl ? 2 : 1 }, svg);
-      el("text", { x: X(v), y: y + 26, "text-anchor": "middle", style: hl ? `fill:${css("--ink")};font-weight:600` : "" }, svg).textContent = lab; }
-    if (Number.isFinite(val)) el("circle", { cx: X(val), cy: y + 5, r: 7, fill: css("--mq20"), stroke: css("--surface"), "stroke-width": 2 }, svg);
+      el("text", { x: X(v), y: y + 26, "text-anchor": "middle", style: `fill:${css(hl ? "--ink" : "--muted")};font-family:var(--f-mono);font-size:11px;${hl ? "font-weight:600" : ""}` }, svg).textContent = lab; }
+    if (Number.isFinite(val)) el("circle", { cx: X(val), cy: y + 5, r: 7, fill: css("--m-counter"), stroke: css("--surface"), "stroke-width": 2 }, svg);
     el("text", { x: W - MR, y: y - 12, "text-anchor": "end", style: `fill:${css("--ink")};font-family:var(--f-mono);font-size:12px` }, svg).textContent = fmt(val);
   };
-  gauge(38, "Total SMN copies (from depth)", 6, r.total, [0, 1, 2, 3, 4, 5, 6].map((v) => [v, String(v), v === r.T]), (v) => v.toFixed(2));
-  gauge(118, `SMN1 share of twin-site reads (expected k/${r.T || "?"} for SMN1 = k)`, 1, r.share,
+  gauge(34, "Total SMN copies, from depth", 6, r.total, [0, 1, 2, 3, 4, 5, 6].map((v) => [v, String(v), v === r.T]), (v) => (Number.isFinite(v) ? v.toFixed(2) : "–"));
+  gauge(106, `SMN1 share at the twin sites (k/${r.T || "?"} means SMN1 = k)`, 1, r.share,
     r.T ? Array.from({ length: r.T + 1 }, (_, k) => [k / r.T, `${k}/${r.T}`, k === r.A]) : [], (v) => (Number.isFinite(v) ? `${(100 * v).toFixed(0)}%` : "–"));
 }
+function drawCounter() {
+  const host = $("#mCounter"), up = state.pt === "upload", run = up ? null : currentRun(), p = up ? null : patientOf(state.pt);
+  const cnt = up ? state.upload.cnt : run?.counter; if (!cnt) { host.innerHTML = ""; return; }
+  const r = genotypeCounts(cnt);
+  host.innerHTML = `<div class="mhead"><h3><span class="mdot"></span>Copy-number counter</h3><span class="tag">3 counts · 2 ratios · ${up ? "ran in your browser" : "same code runs in your browser"}</span></div>
+    <div class="bigcall"><div class="s1"><span class="n">${r.A}</span><span class="l">SMN1</span></div><div class="s2"><span class="n">${r.B}</span><span class="l">SMN2</span></div></div>
+    ${vpill(r.A)} ${truthLine(r.A, r.B, p)}
+    <div class="how"><h4>How it got there</h4><table><tbody>
+      <tr><td>Reads with a control-gene marker (2 copies)</td><td class="num">${fmtInt(cnt.Rc)}</td></tr>
+      <tr><td>Reads with an SMN marker</td><td class="num">${fmtInt(cnt.Rg)}</td></tr>
+      <tr><td>→ total SMN copies = SMN reads ÷ reads per copy</td><td class="num">${Number.isFinite(r.total) ? r.total.toFixed(2) : "–"} → ${r.T}</td></tr>
+      <tr><td>Twin-site reads with the SMN1 letter</td><td class="num">${fmtInt(cnt.X)} / ${fmtInt(cnt.N)}</td></tr>
+      <tr><td>→ SMN1 = ${r.T} × ${cnt.N ? r.share.toFixed(2) : "–"}</td><td class="num">${cnt.N ? (r.T * r.share).toFixed(2) : "–"} → ${r.A}</td></tr>
+    </tbody></table><div id="gaugeHost"></div></div>${runStrip("counter")}`;
+  drawGauges($("#gaugeHost"), r);
+  host.querySelectorAll(".runs b").forEach((b) => (b.onclick = () => { state.rep = +b.dataset.rep; drawMethods(); }));
+}
+function alleleName(a) { const m = a.match(/^SMN_group1_(.+?)_h(\d)_(\d+)$/); return m ? `${m[1]} · hap ${m[2]} · #${m[3]}` : a; }
+function drawCtyper() {
+  const host = $("#mCtyper");
+  if (state.pt === "upload") {
+    host.innerHTML = `<div class="mhead"><h3><span class="mdot ctyper"></span>ctyper</h3><span class="tag">pangenome k-mers · command line</span></div>
+      <p class="note">ctyper can't run in a browser. To genotype your file the same way (FASTA input; see the outline for why):</p>
+      <div class="cmdline">awk 'NR%4==1{print ">"substr($0,2)} NR%4==2' reads.fq > reads.fa
+ctyper -i reads.fa -m subset_matrix.txt -o out.txt -d &lt;31-mer depth of one copy&gt;</div>`; return; }
+  const run = currentRun(), p = patientOf(state.pt), y = run?.ctyper;
+  if (!y) { host.innerHTML = `<div class="mhead"><h3><span class="mdot ctyper"></span>ctyper</h3></div><p class="note">No ctyper result for this read set.</p>`; return; }
+  const uniq = new Map(); for (const [a, g, c] of y.alleles) { const u = uniq.get(a) || { g, c, n: 0 }; u.n++; uniq.set(a, u); }
+  const rows = [...uniq.entries()].map(([a, u]) => { const gene = /^SMN1/.test(u.g) ? "SMN1" : /^SMN2/.test(u.g) ? "SMN2" : "other";
+    return `<span class="an" title="${esc(a)}">${alleleName(a)}${u.n > 1 ? ` ×${u.n}` : ""}</span><span class="gchip ${gene}">${esc(u.g.replace("_partial", " partial"))}</span>
+      <span class="cbar" title="regression coefficient ${u.c}"><i style="width:${Math.min(100, (u.c / 2) * 100)}%"></i></span><span class="cv">${u.c.toFixed(2)}</span>`; }).join("");
+  host.innerHTML = `<div class="mhead"><h3><span class="mdot ctyper"></span>ctyper</h3><span class="tag">ctyper 1.0.5 · ran offline on the same reads</span></div>
+    <div class="bigcall"><div class="s1"><span class="n">${y.SMN1}</span><span class="l">SMN1</span></div><div class="s2"><span class="n">${y.SMN2}</span><span class="l">SMN2</span></div></div>
+    ${vpill(y.SMN1)} ${truthLine(y.SMN1, y.SMN2, p)}
+    <div class="how"><h4>How it got there</h4>
+      <p class="note">Depth of one copy, measured from the control gene: d = ${run.d} 31-mers. Each k-mer count ÷ d is fitted as a mix of SMN alleles from ${"~340"} assembled haplotypes. The alleles it kept, with their fitted copies (line = 1 copy):</p>
+      ${rows ? `<div class="alle">${rows}</div>` : `<p class="note">No SMN allele kept: the counts were too low to fit.</p>`}
+      <p class="note">${y.alleles.length} allele cop${y.alleles.length === 1 ? "y" : "ies"} after rounding along the allele family tree; each named SMN1 or SMN2 from its sequence.</p>
+    </div>${runStrip("ctyper")}`;
+  host.querySelectorAll(".runs b").forEach((b) => (b.onclick = () => { state.rep = +b.dataset.rep; drawMethods(); }));
+}
+function drawMethods() { drawCounter(); drawCtyper();
+  const rs = state.pt === "upload" ? [] : runsOf(state.pt, state.cov);
+  $("#resample").hidden = rs.length < 2;
+  $("#sampleNote").textContent = state.pt === "upload" ? "" : rs.length > 1 ? `${state.cov === "30" ? "simulation" : "sample"} ${state.rep % rs.length + 1} of ${rs.length}` : state.cov === "10" ? "all simulated reads" : ""; }
+function drawCovChart() {
+  const A = CMP?.accuracy; const host = $("#covChart"); host.innerHTML = ""; if (!A) return;
+  const covs = Object.keys(A).map(Number).sort((a, b) => b - a), W = 760, H = 270, ML = 52, MR = 120, MT = 24, MB = 44;
+  const svg = el("svg", { viewBox: `0 0 ${W} ${H}`, role: "img", "aria-label": "SMN1 accuracy by coverage for both methods" }, host);
+  const X = (i) => ML + (i + 0.5) * (W - ML - MR) / covs.length, Y = (v) => MT + (1 - v) * (H - MT - MB);
+  const ci = covs.indexOf(+state.cov);
+  if (ci >= 0) el("rect", { x: X(ci) - (W - ML - MR) / covs.length / 2 + 6, y: MT - 8, width: (W - ML - MR) / covs.length - 12, height: H - MT - MB + 8, rx: 6, fill: css("--band"), opacity: 0.7 }, svg);
+  for (const v of [0, 0.25, 0.5, 0.75, 1]) { el("line", { x1: ML, x2: W - MR + 10, y1: Y(v), y2: Y(v), stroke: css("--rule"), "stroke-width": v === 0 ? 1 : 0.7 }, svg);
+    el("text", { x: ML - 8, y: Y(v) + 4, "text-anchor": "end", style: `fill:${css("--muted")};font-family:var(--f-mono);font-size:11px` }, svg).textContent = `${v * 100}%`; }
+  covs.forEach((c, i) => { el("text", { x: X(i), y: H - MB + 20, "text-anchor": "middle", style: `fill:${css(i === ci ? "--ink" : "--ink-2")};font-family:var(--f-mono);font-size:12px;${i === ci ? "font-weight:600" : ""}` }, svg).textContent = `${c}x`;
+    el("text", { x: X(i), y: H - MB + 35, "text-anchor": "middle", style: `fill:${css("--muted")};font-family:var(--f-body);font-size:10.5px` }, svg).textContent = `${A[c].n} read sets`; });
+  const series = [["counter", "--m-counter", "Counter"], ["ctyper", "--m-ctyper", "ctyper"]];
+  for (const [k, col, lab] of series) {
+    const pts = covs.map((c, i) => [X(i), Y((A[c][`${k}_smn1`] || 0) / A[c].n)]);
+    el("polyline", { points: pts.map((p) => p.join(",")).join(" "), fill: "none", stroke: css(col), "stroke-width": 2, "stroke-linejoin": "round" }, svg);
+    pts.forEach(([x, y], i) => { const c = covs[i], v = (A[c][`${k}_smn1`] || 0) / A[c].n;
+      if (k === "counter") el("circle", { cx: x, cy: y, r: 6, fill: css(col), stroke: css("--surface"), "stroke-width": 2 }, svg);
+      else el("rect", { x: x - 5.5, y: y - 5.5, width: 11, height: 11, rx: 2, fill: css(col), stroke: css("--surface"), "stroke-width": 2 }, svg);
+      const other = (A[c][`${k === "counter" ? "ctyper" : "counter"}_smn1`] || 0) / A[c].n, same = Math.round(100 * other) === Math.round(100 * v);
+      if (same && k === "ctyper") return;   // one shared label when both methods score the same
+      el("text", { x: x + 10, y: y + (k === "counter" ? -8 : 16), style: `fill:${css("--ink")};font-family:var(--f-mono);font-size:11.5px` }, svg).textContent = `${Math.round(100 * v)}%${same ? " both" : ""}`; });
+    const [lx, ly] = pts[pts.length - 1];
+    el("text", { x: lx + 44, y: ly + 4, style: `fill:${css("--ink")};font-family:var(--f-body);font-size:13px;font-weight:600` }, svg).textContent = lab;
+  }
+  covs.forEach((c, i) => { const w = (W - ML - MR) / covs.length;
+    el("rect", { x: X(i) - w / 2, y: MT - 8, width: w, height: H - MT - MB + 8, fill: "transparent", style: "cursor:pointer" }, svg).addEventListener("mousemove", (ev) => {
+      const t = $("#tip"); t.hidden = false; const a = A[c];
+      t.innerHTML = `<div><b>${c}x · ${a.n} read sets</b></div><div>Counter: SMN1 right ${a.counter_smn1}/${a.n}, full genotype ${a.counter}/${a.n}</div><div>ctyper: SMN1 right ${a.ctyper_smn1 || 0}/${a.n}, full genotype ${a.ctyper || 0}/${a.n}</div><div class="k">click to show this coverage above</div>`;
+      t.style.left = ev.pageX + (ev.clientX > window.innerWidth - 300 ? -290 : 14) + "px"; t.style.top = ev.pageY + 12 + "px"; });
+    svg.lastChild.addEventListener("click", () => { state.cov = String(c); state.rep = 0; segButtons("#covSeg", covItems(), "cov", onCov); drawPatients(); });
+  });
+  svg.addEventListener("mouseleave", () => ($("#tip").hidden = true));
+  $("#covTable").innerHTML = `<table><thead><tr><th>coverage</th><th class="num">read sets</th><th class="num">counter: SMN1 right</th><th class="num">counter: SMN1+SMN2 right</th><th class="num">ctyper: SMN1 right</th><th class="num">ctyper: SMN1+SMN2 right</th></tr></thead><tbody>${
+    covs.map((c) => { const a = A[c]; return `<tr><td class="mono">${c}x</td><td class="num">${a.n}</td><td class="num">${a.counter_smn1}</td><td class="num">${a.counter}</td><td class="num">${a.ctyper_smn1 || 0}</td><td class="num">${a.ctyper || 0}</td></tr>`; }).join("")}</tbody></table>
+    <p class="note">${esc(CMP.note || "")}</p>`;
+}
+function drawPatients() {
+  if (!D.sim) { $("#step7").hidden = true; return; }
+  drawPatientCards(); drawReads(); drawMethods(); drawCovChart();
+}
+const covItems = () => (CMP ? Object.keys(CMP.accuracy).map(Number).sort((a, b) => b - a) : [10, 5, 2]).map((c) => [String(c), `${c}x`]);
+function onCov() { state.rep = 0; drawPatients(); }
 async function readFastq(file) {
   const st = $("#fqStatus"); st.textContent = ` reading ${file.name}…`;
   let stream = file.stream(); if (/\.gz$/i.test(file.name)) stream = stream.pipeThrough(new DecompressionStream("gzip"));
@@ -836,12 +1045,14 @@ async function readFastq(file) {
       if (ln % 4 === 1) { n++; const h = countRead(line.trim().toUpperCase(), lut, K); if (h) hits.push(h); } ln++; }
     if (n % 20000 < 50) st.textContent = ` ${n.toLocaleString()} reads scanned…`; if (done) break; }
   st.textContent = ` ${file.name}: ${n.toLocaleString()} reads scanned, ${hits.length.toLocaleString()} carried a marker.`;
-  state.upload = { name: file.name, cnt: summariseHits(hits, 1) }; state.pt = "upload"; drawPatients();
+  state.upload = { name: file.name, cnt: summariseHits(hits), n, marked: hits.length }; state.pt = "upload"; drawPatients();
+  document.getElementById("mCounter").scrollIntoView({ behavior: "smooth", block: "center" });
 }
 function initPatients() {
   if (!D.sim) { $("#step7").hidden = true; return; }
-  const top = D.sim.patients[0].coverage;
-  segButtons("#covSeg", [2, 5, top].map((c) => [String(c), `${c}x coverage`]), "cov", drawPatients);
+  if (CMP && !CMP.runs?.A?.[state.cov]) state.cov = covItems()[0][0];
+  segButtons("#covSeg", covItems(), "cov", onCov);
+  $("#resample").onclick = () => { state.rep++; drawMethods(); };
   $("#cReveal").onchange = drawPatients;
   $("#fqFile").onchange = (e) => e.target.files[0] && readFastq(e.target.files[0]);
   const dz = $("#drop"); dz.ondragover = (e) => { e.preventDefault(); dz.classList.add("over"); }; dz.ondragleave = () => dz.classList.remove("over");
@@ -862,8 +1073,8 @@ $("#sampleSearch").oninput = (e) => { fillSamples(e.target.value); state.sample 
 caveats(); drawTracks(); drawScore(); drawCard();
 if (state.pg) segButtons("#pgSeg", Object.keys(D.pangraph).map((k) => [k, k === "SMN" ? "SMN1 / SMN2" : "α-globin"]), "pg", drawPangraph);
 drawPangraph();
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { drawTracks(); drawScore(); drawCard(); drawPangraph(); });
-new MutationObserver(() => { drawTracks(); drawScore(); drawCard(); drawPangraph(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { drawTracks(); drawScore(); drawCard(); drawPangraph(); if (D.sim) { drawMethods(); drawCovChart(); } });
+new MutationObserver(() => { drawTracks(); drawScore(); drawCard(); drawPangraph(); if (D.sim) { drawMethods(); drawCovChart(); } }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 // ---------------------------------------------------------------- theme toggle (light / dark), remembered per browser
 function isDark() { const t = document.documentElement.dataset.theme; return t ? t === "dark" : matchMedia("(prefers-color-scheme: dark)").matches; }
 function syncThemeBtn() { $("#themeLab").textContent = isDark() ? "Light mode" : "Dark mode"; }
