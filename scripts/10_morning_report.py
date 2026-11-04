@@ -56,6 +56,9 @@ def fig_profiles(depth, ref, locus, samples, fn):
 
 def main():
     lines = ["# Morning report — dark dosage", ""]
+    summ = os.path.join(REP, "summary.md")  # hand-written 5-line human summary, kept at the top
+    if os.path.exists(summ):
+        lines += [open(summ).read().strip(), ""]
     st = os.path.join(REPO_ROOT, "STATUS.md")
     if os.path.exists(st):
         lines += ["## Phase status", "", *[l.rstrip() for l in open(st) if l.startswith("|")], ""]
@@ -132,6 +135,47 @@ def main():
     if figs:
         lines += ["## First-look figures", "", *[f"- `reports/{os.path.basename(f)}`" for f in figs], ""]
 
+    conc = tsv(path("tables", "concordance.tsv"))
+    if conc:
+        lines += ["## Method concordance with assembly truth (exact match, usable truth samples)", "",
+                  "| method | SMN1 | SMN2 incl. Δ7-8 | SMN total | α-globin total |", "|---|---|---|---|---|"]
+        cell = {(r["method"], r["target"]): r for r in conc}
+        for m in sorted({r["method"] for r in conc}):
+            vals = []
+            for t in ["SMN1", "SMN2_all", "SMN_total", "HBA_total"]:
+                r = cell.get((m, t))
+                vals.append(f"{float(r['accuracy']) * 100:.1f}% ({r['n_correct']}/{r['n']})" if r else "–")
+            lines.append(f"| {m} | " + " | ".join(vals) + " |")
+        lines += ["", "Full table: `data/tables/concordance.tsv`; per-call rows `data/tables/calls_long.tsv`; "
+                  "truth vs DRAGEN 4.2.7 / ctyper disagreements `data/tables/truth_crosscheck.tsv`.", ""]
+    for fn in sorted(os.listdir(path("tables"))) if os.path.isdir(path("tables")) else []:
+        if fn.startswith("bayes_cn_eval."):
+            ev = tsv(path("tables", fn))
+            lines.append(f"- Bayes v0 `{fn[15:-4]}`: " + "; ".join(f"{r['target']} acc {r['accuracy']} brier {r['brier']} (n={r['n']})" for r in ev))
+    if os.path.exists(os.path.join(REP, "explorer", "index.html")):
+        lines += ["", "## Web explorer", "", "- `reports/explorer/index.html` — open in a browser (self-contained, works offline): "
+                  "locus browser (GRCh38 vs CHM13, MAPQ≥0 vs ≥20, population band), per-sample card with truth / DRAGEN / posterior, "
+                  "live Bayes caller lab with sliders re-scored against truth, and the scoreboard.", ""]
+    hap = tsv(path("truth", "haplotypes.tsv"))
+    if hap:
+        bad = ("locus_not_found", "incomplete_locus", "copy_at_contig_end")
+        okS = [r for r in hap if not any(b in r["SMN_flags"] for b in bad)]
+        okH = [r for r in hap if not any(b in r["HBA_flags"] for b in bad)]
+        d1, d2 = defaultdict(int), defaultdict(int)
+        for r in okS:
+            d1[int(r["SMN1"]) + int(r["SMN2"]) + int(r["SMN_del7-8"])] += 1
+        for r in okH:
+            d2[int(r["HBA_total"])] += 1
+        lines += ["## Truth sanity (per complete haplotype)", "",
+                  f"- haplotypes typed {len(hap)}; complete SMN locus {len(okS)}; complete HBA locus {len(okH)}",
+                  "- SMN copies (SMN1+SMN2+Δ7-8) per haplotype: " + ", ".join(f"{k}: {v}" for k, v in sorted(d1.items())),
+                  "- α-globin copies per haplotype: " + ", ".join(f"{k}: {v}" for k, v in sorted(d2.items())), ""]
+    lt = tsv(path("tables", "locityper_our_loci.tsv"))
+    if lt:
+        lines += ["## Locityper", "", "- db loci overlapping our windows: " + ", ".join(f"{r['locus']} ({r['genes_inside']})" for r in lt),
+                  "- **No Locityper locus contains SMN1/SMN2 or HBA1/HBA2** → no Locityper-implied CN for those genes "
+                  "(`data/tables/locityper_cn.tsv` says so). LOO benchmark rows: `data/tables/locityper_loo.tsv`; "
+                  "1kGP genotypes (with `circular` flag): `data/tables/locityper_1kgp.tsv`.", ""]
     loc = path("precomputed", "locityper", "our_loci.txt")
     if os.path.exists(loc):
         found = open(loc).read().split()

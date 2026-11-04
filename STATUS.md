@@ -26,3 +26,4 @@
 | 2026-11-04 04:20 | S2_locityper | DONE | loci ['CBS', 'HBM', 'MARVELD2']; LOO rows 360; 1kGP gts 1950; CN typed 0 (no SMN/HBA locus in db) |
 | 2026-11-04 04:25 | S6_explorer | DONE | reports/explorer/data.json (2.3 MB) |
 | 2026-11-04 04:29 | S6_explorer | DONE | reports/explorer/data.json (2.3 MB) |
+| 2026-11-04 04:30 | P10_report | DONE | reports/MORNING_REPORT.md |
