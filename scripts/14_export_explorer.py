@@ -130,6 +130,8 @@ def main():
                                     "HBA_hybrid", "HBA_total", "usable_SMN", "usable_HBA", "flags"]}
         data["samples"].append(dict(id=s, role=r["role"], pop=r["population"], superpop=r["superpop"], sex=r["sex"],
                                     truth=tr, dragen=dragen.get(s, {})))
+    pg = os.path.join(OUT, "pangraph.json")
+    data["pangraph"] = json.load(open(pg)) if os.path.exists(pg) else {}
     data["meta"] = dict(n_selected=len(sel), n_truth=len(truth), refs=list(data["caller"].keys()),
                         native_bin_bp={"SMN": 1000, "HBA": 250, "CHR21_FALSEDUP": 1000}, rebin=REBIN)
     js = json.dumps(data, separators=(",", ":"))

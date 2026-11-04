@@ -21,6 +21,7 @@
   --gene: #23395b;
   --gene-dup: #8a5a9e;         /* GRCh38-only false-duplication copy */
   --psv: #eda100;
+  --smn1: #2a78d6; --smn2: #eb6834; --smn2d: #f2b48c; --other-gene: #9aa7b8; --anchor-gene: #d3d8de;
   --good: #0ca30c; --bad: #d03b3b; --warn: #fab219;
   --seq-0: #f0f4f9; --seq-1: #cde2fb; --seq-2: #86b6ef; --seq-3: #3987e5; --seq-4: #1c5cab; --seq-5: #0d366b;
   --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
@@ -102,6 +103,12 @@ td.num, th.num { text-align: right; font-family: var(--f-mono); }
 .stat { border-top: 2px solid var(--rule); padding-top: 8px; display: grid; gap: 4px; }
 .stat .lab { font-size: 12px; color: var(--muted); }
 ul.caveats { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; color: var(--ink-2); max-width: 90ch; }
+.pg-wrap { display: grid; gap: 14px; }
+.pg-figs { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 18px; }
+.pg-figs figure { margin: 0; display: grid; gap: 6px; align-content: start; }
+.pg-figs img { width: 100%; border: 1px solid var(--rule); border-radius: 6px; background: #fff; }
+.pg-figs figcaption { font-size: 12.5px; color: var(--muted); }
+@media (max-width: 760px) { .pg-figs { grid-template-columns: 1fr; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 
@@ -139,6 +146,22 @@ ul.caveats { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 
       <p>Assembly truth next to every caller for the selected sample.</p>
     </div>
     <div class="cardrow" id="card"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-pg">
+    <div class="panel-head">
+      <h2 id="h-pg">Pangenome view</h2>
+      <p>A local pangenome graph (pggb) built from complete HPRC R2 haplotypes plus GRCh38 and CHM13, anchor to anchor. Each row is one haplotype, coloured by our truth call. Hover a gene for details; click a row to open that sample above.</p>
+    </div>
+    <div class="controls"><div class="seg" role="group" aria-label="Graph" id="pgSeg"></div><div class="legend" id="pgLegend"></div></div>
+    <div class="facts" id="pgFacts"></div>
+    <div class="pg-wrap"><div class="scroll" id="pgPaths"></div>
+      <div class="pg-figs">
+        <figure><img id="pgImg1" alt="odgi 1D depth view of the graph"><figcaption>odgi 1D view: one row per haplotype over graph nodes. Grey = node visited once; warm colours = visited 2+ times, i.e. the haplotype loops through the same sequence (its extra SMN or HBA copies). Black arcs below are the graph's long-range edges.</figcaption></figure>
+        <figure><img id="pgImg2" alt="odgi 2D layout of the graph"><figcaption>odgi 2D layout. Unique flanks are straight lines; the duplicated core folds into loops, because every copy of a near-identical gene collapses onto the same nodes.</figcaption></figure>
+      </div>
+    </div>
+    <p class="note" id="pgNote"></p>
   </section>
 
   <section class="panel" aria-labelledby="h-lab">
@@ -470,7 +493,7 @@ function drawCard() {
 function caveats() {
   const items = [
     "Truth is sequence-based typing of HPRC release-2 assemblies (GRCh38 SMN1 exons 1–8 and HBA2 projected onto each haplotype's locus; c.840 decides SMN1 vs SMN2). A haplotype counts only if one contig carries every copy plus unique anchor genes on both sides; fragmented loci are missing data, never copy number 0.",
-    "Locityper's public database (326 loci) has no locus for SMN1/SMN2 or HBA1/HBA2, so no pangenome-haplotype genotyper is on the scoreboard for those genes. It does cover CBS (chr21 demo).",
+    "Locityper's public database (326 loci) has no locus for SMN1/SMN2 or HBA1/HBA2, so no pangenome-haplotype genotyper is on the scoreboard for those genes. It does cover CBS (chr21 demo). The pangenome view was built here from the assemblies for illustration; no reads were genotyped against it.",
     "Naive depth uses per-gene normalised depth rounded to the nearest integer with no GC or mappability correction; it is the baseline, not a straw man for read-depth callers in general.",
     "DRAGEN 4.4.7 results are labelled 'multigenome' after the bucket's reference name (hg38-alt_masked.cnv.graph…); DRAGEN targeted callers are paralog-aware and use their own internal normalisation.",
     "The Bayes v0 prior comes from DRAGEN 4.2.7 calls on the other 1kGP samples here, so with the prior on it partly inherits DRAGEN's errors. Its depth calibration assumes the median sample carries 4 copies per family (no truth used).",
@@ -478,16 +501,62 @@ function caveats() {
   ];
   $("#caveats").innerHTML = items.map((x) => `<li>${x}</li>`).join("");
 }
+// ---------------------------------------------------------------- pangenome view
+const PG_COL = { SMN1: "--smn1", SMN2: "--smn2", "SMN2_del7-8": "--smn2d", HBA1: "--smn1", HBA2: "--smn2" };
+const PG_ANCHOR = new Set(["MARVELD2", "BDP1", "RAD17", "MCCC2", "NPRL3", "LUC7L"]);
+state.pg = D.pangraph && D.pangraph.SMN ? "SMN" : Object.keys(D.pangraph || {})[0];
+function pgColor(g) { return css(PG_COL[g] || (PG_ANCHOR.has(g) ? "--anchor-gene" : "--other-gene")); }
+function drawPangraph() {
+  const G = D.pangraph?.[state.pg]; const host = $("#pgPaths"); host.innerHTML = "";
+  if (!G) { $("#pgNote").textContent = "No pangenome graph in this build."; return; }
+  const st = G.graph || {};
+  $("#pgFacts").innerHTML = `<span><b>${st.n_paths}</b> paths (${st.n_paths - 2} haplotypes + GRCh38 + CHM13)</span>` +
+    `<span><b>${(st.path_bp / 1e6).toFixed(1)} Mb</b> of sequence</span><span>collapse into a graph of <b>${(st.graph_bp / 1e6).toFixed(2)} Mb</b></span>` +
+    `<span><b>${(st.path_bp / st.n_paths / st.graph_bp).toFixed(1)}×</b> mean path length / graph length</span>`;
+  const core = state.pg === "SMN" ? ["SMN1", "SMN2", "SMN2_del7-8"] : ["HBA2", "HBA1"];
+  $("#pgLegend").innerHTML = core.map((g) => `<span><span class="sw" style="background:${pgColor(g)};height:10px;width:10px"></span>${g}</span>`).join("") +
+    `<span><span class="sw" style="background:${css("--other-gene")};height:10px;width:10px"></span>other genes in the duplication</span>` +
+    `<span><span class="sw" style="background:${css("--anchor-gene")};height:10px;width:10px"></span>unique anchor</span>`;
+  const rows = G.paths, rowH = 16, padL = 120, padR = 170, W = Math.max(720, host.clientWidth || 900);
+  const maxL = Math.max(...rows.map((r) => r.length)); const x = (v) => padL + (v / maxL) * (W - padL - padR);
+  const svg = el("svg", { width: W, height: rows.length * rowH + 30, role: "img", "aria-label": `${state.pg} haplotype structures` }, host);
+  rows.forEach((r, i) => {
+    const y = 8 + i * rowH + rowH / 2; const sid = r.label.split("#")[0];
+    const g = el("g", { style: byId[sid] ? "cursor:pointer" : "" }, svg);
+    el("rect", { x: 0, y: y - rowH / 2, width: W, height: rowH, fill: "transparent" }, g);
+    const t = el("text", { x: padL - 8, y: y + 3.5, "text-anchor": "end" }, g); t.textContent = r.label;
+    if (sid === state.sample) t.setAttribute("style", `fill:${css("--ink")};font-weight:600`);
+    el("line", { x1: x(0), x2: x(r.length), y1: y, y2: y, stroke: css("--axis"), "stroke-width": 1 }, g);
+    for (const [name, s, e] of r.genes) {
+      const isCore = name in PG_COL; const h = isCore ? 11 : PG_ANCHOR.has(name) ? 6 : 8;
+      const rc = el("rect", { x: x(s), y: y - h / 2, width: Math.max(2, x(e) - x(s)), height: h, rx: 1.5, fill: pgColor(name) }, g);
+      rc.addEventListener("mousemove", (ev) => { const tip = $("#tip"); tip.hidden = false;
+        tip.innerHTML = `<div><b>${name}</b></div><div class="k">${r.label} · ${(s / 1e3).toFixed(1)}–${(e / 1e3).toFixed(1)} kb</div><div class="k">${r.path}</div>`;
+        tip.style.left = ev.pageX + (ev.clientX > window.innerWidth - 260 ? -250 : 14) + "px"; tip.style.top = ev.pageY + 12 + "px"; });
+      rc.addEventListener("mouseleave", () => { $("#tip").hidden = true; });
+    }
+    const tt = el("text", { x: x(r.length) + 8, y: y + 3.5 }, g); tt.textContent = r.truth;
+    if (byId[sid]) g.addEventListener("click", () => { state.sample = sid; fillSamples($("#sampleSearch").value); drawTracks(); drawCard(); drawPangraph();
+      document.getElementById("h-locus").scrollIntoView({ behavior: "smooth" }); });
+  });
+  const ax = el("text", { x: padL, y: rows.length * rowH + 26 }, svg); ax.textContent = `0 … ${(maxL / 1e3).toFixed(0)} kb from the left unique anchor (paths oriented like GRCh38)`;
+  $("#pgImg1").src = G.odgi_1d || ""; $("#pgImg2").src = G.odgi_2d || "";
+  $("#pgNote").textContent = state.pg === "SMN"
+    ? "Haplotypes differ by up to ~2 Mb in length and in the order, orientation and number of SMN/NAIP/SERF1/GTF2H2 copies. A linear reference can only hold one of these layouts, and the graph has to fold all copies onto shared nodes, so neither tells you directly which copy a short read came from."
+    : "Most haplotypes carry HBA2+HBA1 (2 copies); the −α3.7/−α4.2 deletions leave one, and triplications add one. HG00253#2 walks the whole HBZ–HBQ1 block twice (~150 kb), but its reads show normal HBZ depth (2.03 copies), which points to a false duplication in that assembly: truth says 6 copies, DRAGEN says 4.";
+}
 // ---------------------------------------------------------------- boot
 facts();
 segButtons("#locusSeg", LOCI, "locus", drawTracks);
 segButtons("#refSeg", Object.keys(D.caller).map((r) => [r, REFNAME[r]]), "ref", runLab);
 segButtons("#tgtSeg", [["SMN1", "SMN1"], ["SMN2_all", "SMN2 incl. Δ7-8"], ["SMN_total", "SMN total"], ["HBA_total", "α-globin total"]], "target", drawScore);
 fillSamples();
-$("#sampleSel").onchange = (e) => { state.sample = e.target.value; drawTracks(); drawCard(); };
+$("#sampleSel").onchange = (e) => { state.sample = e.target.value; drawTracks(); drawCard(); drawPangraph(); };
 $("#sampleSearch").oninput = (e) => { fillSamples(e.target.value); state.sample = $("#sampleSel").value; drawTracks(); drawCard(); };
 for (const id of ["#sEps", "#sEff", "#sConc", "#sDepth", "#cPrior"]) $(id).addEventListener("input", runLab);
 caveats(); drawTracks(); runLab();
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { drawTracks(); runLab(); });
-new MutationObserver(() => { drawTracks(); runLab(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+if (state.pg) segButtons("#pgSeg", Object.keys(D.pangraph).map((k) => [k, k === "SMN" ? "SMN1 / SMN2" : "α-globin"]), "pg", drawPangraph);
+drawPangraph();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { drawTracks(); runLab(); drawPangraph(); });
+new MutationObserver(() => { drawTracks(); runLab(); drawPangraph(); }).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 </script>

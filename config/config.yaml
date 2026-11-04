@@ -116,3 +116,9 @@ dragen_buckets:
 dragen_file_patterns: ['\.smn\.tsv', hba, targeted, '\.cnv_metrics', ploidy_estimation_metrics, '\.wgs_coverage_metrics']   # regexes (grep -E)
 dragen_exclude_pattern: '/hla/|_hla/'
 dragen_max_file_mb: 200
+
+# S7 local pangenome graphs (scripts 15/16): pggb 0.7.4 lives in its own env (needs python<3.13 for odgi 0.9.2)
+pangraph:
+  conda_env: pggb074
+  n_haps: {SMN: 16, HBA: 48}
+  pggb_args: "-p 90 -s 5000"
