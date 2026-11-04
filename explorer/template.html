@@ -185,7 +185,7 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
     <h1>Dark Copy Toolbox</h1>
     <p class="lede">Some medically important genes have near-identical twins elsewhere in the genome, so standard pipelines can't tell how many copies a person has. This toolbox walks through the problem in six steps, from <em>why these genes are hard</em> to <em>which method counts them correctly</em>, using 650 people from 1000 Genomes and copy numbers read directly off their HPRC genome assemblies.</p>
     <div class="facts" id="facts"></div>
-    <p class="toplinks"><a href="https://jacgonisa.github.io/dark-copy-toolbox/outline.html">How we built this: project outline →</a> · <a href="https://github.com/jacgonisa/dark-copy-toolbox">code on GitHub</a></p>
+    <p class="toplinks"><a href="https://jacgonisa.github.io/dark-copy-toolbox/outline.html">How we built this: project outline →</a> · <a href="https://jacgonisa.github.io/dark-copy-toolbox/calls.html">all calls (tables)</a> · <a href="https://github.com/jacgonisa/dark-copy-toolbox">code on GitHub</a></p>
   </header>
 
   <nav class="stepnav" aria-label="Steps">
@@ -317,6 +317,7 @@ details summary { cursor: pointer; font-size: 13px; color: var(--ink-2); }
       </div>
       <div id="score"></div>
       <details><summary>Table view</summary><div class="scroll" id="scoreTable"></div></details>
+      <p class="note"><a href="https://jacgonisa.github.io/dark-copy-toolbox/calls.html" target="_blank" rel="noopener">Every call for every person, with downloadable tables →</a></p>
       <div class="notrun"><b>Not run: Locityper.</b> Excluded by design. It aligns reads to candidate haplotypes, and this project does no read mapping. Its public database also has no SMN or HBA locus, and SMN would need a 1–3 Mb locus (see step 3).</div>
     </div>
     <details class="howtruth" id="dragenInfo"><summary><b>How DRAGEN works, and the three ways it was run</b></summary>

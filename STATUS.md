@@ -80,3 +80,10 @@
 | 2026-11-04 18:37 | S9_site | DONE | docs/index.html + docs/outline.html |
 | 2026-11-04 18:39 | S6_explorer | DONE | reports/explorer/data.json (11.5 MB) |
 | 2026-11-04 18:39 | S9_site | DONE | docs/index.html + docs/outline.html |
+| 2026-11-04 18:53 | S13_calls | DONE | docs/calls/*.tsv: 650 people × 9 methods × 5 targets |
+| 2026-11-04 18:55 | S13_calls | DONE | docs/calls/*.tsv: 650 people × 9 methods × 5 targets |
+| 2026-11-04 18:55 | S6_explorer | DONE | reports/explorer/data.json (11.5 MB) |
+| 2026-11-04 18:55 | S9_site | DONE | docs/index.html + docs/outline.html + docs/calls.html |
+| 2026-11-04 18:56 | S9_site | DONE | docs/index.html + docs/outline.html + docs/calls.html |
+| 2026-11-04 18:56 | S9_site | DONE | docs/index.html + docs/outline.html + docs/calls.html |
+| 2026-11-04 18:56 | S9_site | DONE | docs/index.html + docs/outline.html + docs/calls.html |
