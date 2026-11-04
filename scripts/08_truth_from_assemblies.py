@@ -159,6 +159,9 @@ def process(sample, hap, asm, asm_url, fai_url, gzi_url, cat_url, queries):
     fai = local_idx(fai_url, asm, ".fai")
     gzi = local_idx(gzi_url, asm, ".gzi")
     lens = fai_lengths(fai)
+    # FASTA contigs are PanSN-named (SAMPLE#HAP#CONTIG); CAT GFF3 uses the bare contig name
+    alias = {n.split("#")[-1]: n for n in lens}
+    alias.update({n: n for n in lens})
     rows, summary = [], {"sample": sample, "hap": hap, "assembly": asm}
     for fam in ["SMN", "HBA"]:
         core = [g for g in genes if g[5] == fam and g[4] in LOC[fam]["genes"]]
@@ -174,11 +177,12 @@ def process(sample, hap, asm, asm_url, fai_url, gzi_url, cat_url, queries):
             flags.append(f"multi_contig({len(by_contig)})")
         for contig, gs in by_contig.items():
             lo = max(0, min(int(g[1]) for g in gs) - PAD[fam])
-            hi = min(lens.get(contig, 10**12), max(int(g[2]) for g in gs) + PAD[fam])
-            if lo == 0 or hi == lens.get(contig):
+            fa_contig = alias.get(contig, contig)
+            hi = min(lens.get(fa_contig, 10**12), max(int(g[2]) for g in gs) + PAD[fam])
+            if lo == 0 or hi == lens.get(fa_contig):
                 flags.append(f"near_contig_end:{contig}")
             anchors_here = {g[4] for g in genes if g[0] == contig and g[4] in LOC[fam].get("anchors", [])}
-            seq = extract(asm_url, fai, gzi, f"{contig}:{lo + 1}-{hi}")
+            seq = extract(asm_url, fai, gzi, f"{fa_contig}:{lo + 1}-{hi}")
             for k, c in enumerate(type_copies(fam, seq, queries[fam])):
                 n_copies[c["call"]] += 1
                 if fam == "SMN" and c["converted"] == "yes":

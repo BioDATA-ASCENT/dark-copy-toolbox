@@ -13,3 +13,8 @@
 | 2026-11-04 03:48 | P7_precomputed | START |  |
 | 2026-11-04 03:48 | P5_regions | DONE | genes/loci/bins/controls/slice/psv for grch38 + chm13 |
 | 2026-11-04 03:50 | P5_regions | DONE | genes/loci/bins/controls/slice/psv for grch38 + chm13 |
+| 2026-11-04 03:50 | P6_ref_check | DONE | local FASTAs match CRAM M5 tags |
+| 2026-11-04 03:51 | P6_slices | START | refs=grch38 chm13 limit=2 jobs=6 |
+| 2026-11-04 03:51 | P6_slices | DONE | grch38 2, chm13 2 slices; 0 non-OK attempts (logs/slices.tsv) |
+| 2026-11-04 03:51 | P3_manifest | DONE | 3202 1kGP samples; selected 650 (223 truth, 242 parents) |
+| 2026-11-04 03:52 | P6_slices | START | refs=grch38 chm13 limit=0 jobs=8 |

@@ -4,7 +4,7 @@
 data_dir: data
 logs_dir: logs
 threads: 8
-slice_jobs: 6               # samples sliced in parallel (I/O bound, not CPU bound)
+slice_jobs: 8               # samples sliced in parallel (I/O bound, not CPU bound)
 slice_format: cram          # cram (small, needs the reference) | bam (bigger, no reference needed)
 min_free_gb: 60             # preflight refuses to start bulk downloads below this
 deadline_local: "07:30"     # America/New_York. Core phases + MORNING_REPORT.md must exist by then.
@@ -16,9 +16,9 @@ ref_fasta:
   chm13: refs/chm13v2.0.fa
 
 samples:
-  max_samples: 150         # hard cap on samples sliced (per reference)
+  max_samples: 650         # hard cap on samples sliced (per reference); raised from 150 (30 s/slice, see DECISIONS.md)
   include_trio_parents: true
-  n_extra_random: 0         # extra non-HPRC 1kGP samples for a population prior (0 = none)
+  n_extra_random: 200       # extra non-HPRC 1kGP samples for a population prior
   seed: 42
 
 # Loci. Genes are looked up by symbol in GENCODE (GRCh38) and the CHM13 RefSeq/Liftoff GFF3.
