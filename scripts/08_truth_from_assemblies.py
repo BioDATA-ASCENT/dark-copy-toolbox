@@ -175,6 +175,15 @@ def process(sample, hap, asm, asm_url, fai_url, gzi_url, cat_url, queries):
             flags.append("locus_not_found")
         if len(by_contig) > 1:
             flags.append(f"multi_contig({len(by_contig)})")
+        # completeness: one contig must hold every core gene AND unique anchor genes on both sides;
+        # otherwise copies can sit in an assembly gap or be truncated at a contig end (seen: a contig ending
+        # inside SMN2 looked like an SMN2 delta7-8 copy).
+        sides = LOC[fam].get("anchor_sides") or []
+        if by_contig and sides:
+            whole = [c for c in by_contig
+                     if all(any(g[0] == c and g[4] in side for g in genes) for side in sides)]
+            if not (len(by_contig) == 1 and whole):
+                flags.append("incomplete_locus")
         for contig, gs in by_contig.items():
             lo = max(0, min(int(g[1]) for g in gs) - PAD[fam])
             fa_contig = alias.get(contig, contig)
@@ -184,6 +193,9 @@ def process(sample, hap, asm, asm_url, fai_url, gzi_url, cat_url, queries):
             anchors_here = {g[4] for g in genes if g[0] == contig and g[4] in LOC[fam].get("anchors", [])}
             seq = extract(asm_url, fai, gzi, f"{fa_contig}:{lo + 1}-{hi}")
             for k, c in enumerate(type_copies(fam, seq, queries[fam])):
+                clen = lens.get(fa_contig, 10**12)
+                if lo + c["tstart"] < 5000 or lo + c["tend"] > clen - 5000:
+                    flags.append(f"copy_at_contig_end:{contig}")
                 n_copies[c["call"]] += 1
                 if fam == "SMN" and c["converted"] == "yes":
                     n_copies["SMN_converted"] += 1
@@ -254,8 +266,9 @@ def main():
         fh.write("\t".join(["sample", "n_haps"] + num + ["usable_SMN", "usable_HBA", "flags"]) + "\n")
         for s, rs in sorted(by_s.items()):
             sums = [sum(int(r.get(k, 0) or 0) for r in rs) for k in num]
-            ok_smn = len(rs) == 2 and all("locus_not_found" not in r["SMN_flags"] for r in rs)
-            ok_hba = len(rs) == 2 and all("locus_not_found" not in r["HBA_flags"] for r in rs)
+            bad = ("locus_not_found", "incomplete_locus", "copy_at_contig_end")
+            ok_smn = len(rs) == 2 and all(not any(b in r["SMN_flags"] for b in bad) for r in rs)
+            ok_hba = len(rs) == 2 and all(not any(b in r["HBA_flags"] for b in bad) for r in rs)
             flags = ";".join(f"h{r['hap']}:{r['SMN_flags']}|{r['HBA_flags']}" for r in rs if r["SMN_flags"] or r["HBA_flags"])
             fh.write("\t".join(map(str, [s, len(rs)] + sums + [ok_smn, ok_hba, flags])) + "\n")
     state = "DONE" if n_fail == 0 else "PARTIAL"

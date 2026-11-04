@@ -28,12 +28,14 @@ loci:
     chrom: chr5
     genes: [SMN1, SMN2, NAIP, SERF1A, SERF1B, GTF2H2, GTF2H2C]
     anchors: [RAD17, MARVELD2, BDP1, MCCC2]   # unique flanking genes, used to judge assembly completeness
+    anchor_sides: [[RAD17, MARVELD2], [BDP1, MCCC2]]   # truth haplotype complete = >=1 anchor from each side on the copies' contig
     pad_bp: 300000
     bin_bp: 1000
   HBA:
     chrom: chr16
     genes: [HBZ, HBM, HBA2, HBA1, HBQ1]
     anchors: [NPRL3, LUC7L]
+    anchor_sides: [[NPRL3], [LUC7L]]
     pad_bp: 20000
     bin_bp: 250
   CHR21_FALSEDUP:           # bonus demo: GRCh38 false duplication on chr21 that CHM13 fixes

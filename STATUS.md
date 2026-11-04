@@ -21,3 +21,4 @@
 | 2026-11-04 03:55 | P7_precomputed | START |  |
 | 2026-11-04 03:56 | P7_precomputed | START |  |
 | 2026-11-04 04:16 | P9_tables | DONE | 293 sample×ref depth tables; median control depth 35.819x |
+| 2026-11-04 04:17 | P7_precomputed | DONE | Locityper, ctyper tables, DRAGEN per-sample outputs |
