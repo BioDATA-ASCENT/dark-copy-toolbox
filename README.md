@@ -49,6 +49,13 @@ The benchmark covers 206 people for SMN and 221 for α-globin. Each cell is the 
 - **The pipeline itself is sound.** A single-copy control gene (RAD17) comes out right for 223 of 223 people.
 - **Simulated patients can be genotyped without aligning reads.** For an SMA patient, a carrier and an unaffected person, a small marker-counting method gets SMN1 right at all coverages from 30x down to 5x (and 50 of 60 at 2x). ctyper is right at 10x and above but fails increasingly below that.
 
+## Team
+
+- Jacob González Isa ([@jacgonisa](https://github.com/jacgonisa))
+- Qingyao Sun ([@nalzok](https://github.com/nalzok))
+- [@roberimun](https://github.com/roberimun)
+- [@xzengComBio](https://github.com/xzengComBio)
+
 ## Run it
 
 ```bash
