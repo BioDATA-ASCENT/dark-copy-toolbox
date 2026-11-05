@@ -1,110 +1,66 @@
-# Dark Copy Toolbox (dark-dosage)
+# Dark Copy Toolbox
 
-**Live site:** [the toolbox](https://jacgonisa.github.io/dark-copy-toolbox/) (interactive, step by step) ·
-[project outline](https://jacgonisa.github.io/dark-copy-toolbox/outline.html) (what we downloaded, how we processed it, results, problems).
-Both pages are static files in [`docs/`](docs/), built by `scripts/14_export_explorer.py` + `scripts/19_build_site.py`.
+**Can a better reference genome count copies of near-identical genes?**
+BioDATA ASCENT code-a-thon, Cold Spring Harbor Laboratory, November 2026.
 
-**Does a T2T or pangenome reference fix copy-number calling in segmental duplications?**
-BioDATA ASCENT code-a-thon, CSHL, 4 Nov 2026.
+👉 **[Open the toolbox](https://jacgonisa.github.io/dark-copy-toolbox/)** ·
+[Project outline](https://jacgonisa.github.io/dark-copy-toolbox/outline.html) ·
+[Every call, every person](https://jacgonisa.github.io/dark-copy-toolbox/calls.html)
 
-We benchmark read-depth copy-number calls for paralogous genes (SMN1/SMN2 for spinal muscular atrophy,
-HBA1/HBA2 for α-thalassaemia) from 1000 Genomes 30x short reads aligned to GRCh38 vs T2T-CHM13, plus
-pangenome-based genotypers, against truth from HPRC release-2 assemblies. **No reads are mapped**: we stream
-small regions out of existing public alignments.
+## Goal
 
-## 1. Set up the environment
+Some disease genes come in near-identical pairs ("twins"). Short reads can't tell the twins apart, so standard
+pipelines miscount them. Two examples:
 
-Full environment (Linux or Intel Mac; used by the overnight run):
+- **SMN1 / SMN2**: having no working SMN1 causes spinal muscular atrophy (SMA); having one makes you a carrier.
+- **HBA1 / HBA2**: losing α-globin copies causes α-thalassaemia.
 
-```bash
-mamba env create -f environment.yml        # ~600 MB download
-mamba activate darkdosage
-# exact versions (Linux x86-64 only):  mamba create -n darkdosage --file environment.lock.linux-64.txt
-```
+We asked whether newer references fix this:
 
-Apple Silicon Mac: either build the Intel version under Rosetta
-(`CONDA_SUBDIR=osx-64 mamba env create -f environment.yml`), or, if you only need to analyse the outputs
-tomorrow, use the light environment:
+1. **A better linear reference.** Does the complete T2T-CHM13 genome give better copy-number calls than GRCh38?
+2. **A pangenome.** Does ctyper, which genotypes against hundreds of real assembled haplotypes, do better than counting read depth?
 
-```bash
-mamba env create -f environment.laptop.yml && mamba activate darkdosage-lite
-```
+The truth comes from HPRC release 2: the copies in each person's own assembled genome. The reads are public
+1000 Genomes 30x short reads. We map no reads ourselves; we only stream the small regions we need out of
+existing alignments.
 
-`environment.laptop.yml` solves on osx-arm64, osx-64 and linux-64. The full env solves on linux-64 and
-osx-64; ctyper has no osx-arm64 build.
+## Deliverables
 
-## 2. Overnight run (Claude Code)
-
-Use a Linux machine or VM that stays awake, with ≥ 60 GB free disk. An AWS VM in us-east-1 is fastest
-because most of the data is on S3 there, with free egress.
-
-```bash
-cd dark-dosage
-mamba activate darkdosage
-tmux new -s overnight
-claude --permission-mode auto
-```
-
-Then tell it:
-
-> Read PLAN.md and execute it end to end. I'm asleep — don't wait for me; log decisions in DECISIONS.md.
-
-Watch the first two phases (about 10 minutes) before leaving it: preflight and metadata. They show whether the
-data hosts are reachable from that machine. Headless alternative (Claude Code v2.1.259 or later):
-
-```bash
-claude -p "Read PLAN.md and execute it end to end, unattended." \
-  --permission-mode auto --permission-prompts none > logs/claude_overnight.log 2>&1
-```
-
-If auto mode isn't available on your plan, run it interactively in `tmux` with `--permission-mode acceptEdits`
-and approve Bash once per command pattern before bed. Use `--dangerously-skip-permissions` only inside a
-throwaway container or VM.
-
-No Claude Code? `bash scripts/run_all.sh` runs every phase in order (idempotent, re-runnable).
-
-## 3. What you get in the morning
-
-| Path | Contents |
+| | What it is |
 |---|---|
-| `reports/MORNING_REPORT.md` | what's ready, what failed, first-look figures |
-| `data/meta/samples_selected.tsv` | priority-ordered samples (HPRC R2 ∩ 1kGP first, then their parents) |
-| `data/slices/{grch38,chm13}/` | per-sample CRAM slices: SMN locus, HBA cluster, chr21 demo, 30 control blocks |
-| `data/truth/diploid.tsv` | assembly-derived SMN1/SMN2/SMN2Δ7-8/HBA1/HBA2 copies per sample |
-| `data/tables/depth.*.tsv.gz` | depth per bin/gene/control at MAPQ ≥ 0/1/20, normalised CN |
-| `data/tables/psv_counts.*.tsv.gz` | allele counts at SMN1/SMN2 and HBA1/HBA2 paralog-specific sites |
-| `data/precomputed/` | Locityper (1kGP genotypes, LOO benchmark, db), ctyper allele tables, DRAGEN per-sample outputs |
+| **[Toolbox](https://jacgonisa.github.io/dark-copy-toolbox/)** | Interactive walk-through in six steps: the problem, reads on a reference, the pangenome, one person, the method scoreboard, and genotyping simulated patients. |
+| **[Outline](https://jacgonisa.github.io/dark-copy-toolbox/outline.html)** | Data sources, pipeline, results and caveats on one page. |
+| **[All calls](https://jacgonisa.github.io/dark-copy-toolbox/calls.html)** | Every call by every method for every person, with downloadable tables ([`docs/calls/`](docs/calls/)). |
+| **Pipeline** | [`scripts/`](scripts/) and a [`Snakefile`](Snakefile) that rebuild every table and the site. |
 
-## 4. Plan for the day (4 h of hacking)
+## Key results
 
-1. **09:00** Read the morning report; split into pairs: *linear vs T2T depth*, *precomputed callers vs truth*,
-   *Bayesian caller*.
-2. **Figure 1**: depth profile across SMN and HBA, GRCh38 vs CHM13, MAPQ ≥ 0 vs ≥ 20.
-3. **Figure 2**: concordance with truth per method (naive GRCh38, naive CHM13, DRAGEN 4.2.7 graph-hg38,
-   DRAGEN 4.4.7 multigenome, Locityper LOO).
-4. **Figure 3**: Bayesian caller (depth + PSV allele fraction + population prior), calibration and reliability plot.
+The benchmark covers 206 people for SMN and 221 for α-globin. Each cell is the share whose copy number exactly matches their assembly.
 
-## 5. The tool: Dark Copy Toolbox
+| Method | SMN1 | SMN total | α-globin total |
+|---|---|---|---|
+| **ctyper** (pangenome k-mers) | **91%** | 92% | **77%** |
+| Naive depth, all reads (GRCh38 or CHM13) | 76% | **98%** | 3% |
+| Naive depth, uniquely mapped reads only | 0% | – | 34–88% |
+| Always guess "2 copies" | 77% | – | – |
 
-**Benchmark scope:** naive read depth (GRCh38 / CHM13 × MAPQ ≥ 0 / ≥ 20) and ctyper (pangenome k-mers, on GRCh38-
-and CHM13-aligned reads), against HPRC R2 assembly truth, with RAD17 as a single-copy positive control.
-DRAGEN is **not benchmarked** (its SMN/HBA callers are purpose-built for these exact loci); its public calls were
-used only to cross-check the truth (outline §6a). Locityper is labelled "not run" (it maps reads).
+- **Switching to T2T-CHM13 alone doesn't help.** On both references the twins share the same reads, so depth gets the twins' combined count right but not the split between them.
+- **The pangenome does help.** ctyper is the only method that gets SMN1, the gene that decides SMA status, right for about 9 in 10 people.
+- **The pipeline itself is sound.** A single-copy control gene (RAD17) comes out right for 223 of 223 people.
+- **Simulated patients can be genotyped without aligning reads.** For an SMA patient, a carrier and an unaffected person, a small marker-counting method gets SMN1 right at all coverages from 30x down to 5x (and 50 of 60 at 2x). ctyper is right at 10x and above but fails increasingly below that.
 
-- **`docs/index.html`** (built from `explorer/template.html` by `scripts/14_export_explorer.py` + `19_build_site.py`):
-  six steps — the problem, reads on a reference (MAPQ slider, zoom, exon models), the pangenome, one person
-  (truth vs ctyper), compare methods (scoreboard with 95% CIs), and alignment-free genotyping of simulated patients.
-- **`docs/calls.html`** + **`docs/calls/*.tsv`** (`scripts/23_export_calls.py`): every call of every benchmarked
-  method for all 650 people, unrounded naive CN, ctyper gene counts.
-- **`docs/outline.html`** (`explorer/outline.html`): data sources with exact download commands, pipeline, results,
-  problems, and the internal experiments (Bayes v0, DRAGEN).
-- Internal, not in the deliverable: **`caller/bayes_cn.py`**, the Bayes v0 caller on the command line:
-  `python caller/bayes_cn.py --ref grch38 --eval` (also `--ref chm13`, `--no-prior`, `--eff-sites`, `--conc`, `--eps`).
-- **`scripts/13_concordance.py`** — every method vs truth on the same targets → `data/tables/concordance.tsv`.
-- **`snakemake -j 4`** reruns everything from P3 on (all steps idempotent).
+## Run it
 
-## Data sources
+```bash
+mamba env create -f environment.yml && mamba activate darkdosage
+snakemake -j 4          # or: bash scripts/run_all.sh
+```
 
-1000 Genomes 30x (NYGC, GRCh38) · AnVIL_T2T_CHRY (CHM13v2.0 alignments, AnVIL/AWS mirror) · HPRC release 2
-assemblies + CAT annotation · T2T-CHM13v2.0 · GENCODE · Illumina DRAGEN 1kGP reanalysis (AWS Open Data) ·
-Locityper (Zenodo 15879519) · ctyper (Zenodo 16340156) · SMNCopyNumberCaller site/region files.
+## Data
+
+The data comes from public sources:
+- 1000 Genomes 30x reads aligned to GRCh38 (NYGC) and to T2T-CHM13 (AnVIL)
+- HPRC release 2 assemblies
+- the T2T-CHM13v2.0 reference
+- GENCODE gene annotation
+- the precomputed ctyper database (Zenodo 16340156)
