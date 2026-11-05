@@ -3,9 +3,9 @@
 **Can a better reference genome count copies of near-identical genes?**
 BioDATA ASCENT code-a-thon, Cold Spring Harbor Laboratory, November 2026.
 
-👉 **[Open the toolbox](https://jacgonisa.github.io/dark-copy-toolbox/)** ·
-[Project outline](https://jacgonisa.github.io/dark-copy-toolbox/outline.html) ·
-[Every call, every person](https://jacgonisa.github.io/dark-copy-toolbox/calls.html)
+👉 **[Open the toolbox](https://biodata-ascent.github.io/dark-copy-toolbox/)** ·
+[Project outline](https://biodata-ascent.github.io/dark-copy-toolbox/outline.html) ·
+[Every call, every person](https://biodata-ascent.github.io/dark-copy-toolbox/calls.html)
 
 ## Goal
 
@@ -28,9 +28,9 @@ existing alignments.
 
 | | What it is |
 |---|---|
-| **[Toolbox](https://jacgonisa.github.io/dark-copy-toolbox/)** | Interactive walk-through in six steps: the problem, reads on a reference, the pangenome, one person, the method scoreboard, and genotyping simulated patients. |
-| **[Outline](https://jacgonisa.github.io/dark-copy-toolbox/outline.html)** | Data sources, pipeline, results and caveats on one page. |
-| **[All calls](https://jacgonisa.github.io/dark-copy-toolbox/calls.html)** | Every call by every method for every person, with downloadable tables ([`docs/calls/`](docs/calls/)). |
+| **[Toolbox](https://biodata-ascent.github.io/dark-copy-toolbox/)** | Interactive walk-through in six steps: the problem, reads on a reference, the pangenome, one person, the method scoreboard, and genotyping simulated patients. |
+| **[Outline](https://biodata-ascent.github.io/dark-copy-toolbox/outline.html)** | Data sources, pipeline, results and caveats on one page. |
+| **[All calls](https://biodata-ascent.github.io/dark-copy-toolbox/calls.html)** | Every call by every method for every person, with downloadable tables ([`docs/calls/`](docs/calls/)). |
 | **Pipeline** | [`scripts/`](scripts/) and a [`Snakefile`](Snakefile) that rebuild every table and the site. |
 
 ## Key results

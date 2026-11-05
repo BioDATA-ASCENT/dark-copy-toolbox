@@ -110,7 +110,7 @@ td.wrapcell { min-width: 260px; }
     <div class="links">
       <a class="btn primary" href="index.html">Open the toolbox →</a>
       <a class="btn" href="calls.html">All calls (tables)</a>
-      <a class="btn" href="https://github.com/jacgonisa/dark-copy-toolbox">Code on GitHub</a>
+      <a class="btn" href="https://github.com/BioDATA-ASCENT/dark-copy-toolbox">Code on GitHub</a>
       <button type="button" class="themebtn" id="themeBtn" aria-label="Switch between light and dark mode"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg><span id="themeLab">Dark mode</span></button>
     </div>
   </header>
@@ -472,7 +472,7 @@ then normalise over the 36 cells → posterior; the call is the most likely cell
   <section id="repro" aria-labelledby="h-rep">
     <h2 id="h-rep"><span class="num">10</span>Reproduce it</h2>
     <p>Linux, ~250 GB free disk, a few hours. Every step is idempotent; re-running skips finished work.</p>
-<pre><code>git clone https://github.com/jacgonisa/dark-copy-toolbox && cd dark-copy-toolbox
+<pre><code>git clone https://github.com/BioDATA-ASCENT/dark-copy-toolbox && cd dark-copy-toolbox
 mamba env create -f environment.yml && conda activate darkdosage
 
 bash scripts/run_all.sh              # P0–P10: metadata, references, slices, truth, tables, report
